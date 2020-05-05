@@ -13,19 +13,11 @@ public class DeleteProtocol {
 
     public static void sendDelete(String file_id){
         DeleteMessage deleteMessage = new DeleteMessage( Peer.version, Peer.id, file_id);
-        Runnable task;
-        if(Peer.version == Macros.ENHANCED_VERSION) {
-            task = () -> processDeleteEnhancement(deleteMessage.convertMessage(), file_id, 0);
-        }
-        else{
-            task = () -> processDelete(deleteMessage);
-        }
+        Runnable task = () -> processDeleteEnhancement(deleteMessage.convertMessage(), file_id, 0);
         Peer.scheduled_executor.execute(task);
     }
 
-    public static void processDelete(DeleteMessage deleteMessage){
-        Peer.MC.sendMessage(deleteMessage.convertMessage());
-    }
+
 
     public static void receiveDelete(DeleteMessage deleteMessage){
         String file_id = deleteMessage.getFileId();
@@ -34,7 +26,7 @@ public class DeleteProtocol {
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
         Store.getInstance().removeStoredChunks(file_id);
 
-        if(deleteMessage.getVersion() == Macros.ENHANCED_VERSION) {
+        if(deleteMessage.getVersion() == Macros.VERSION) {
             sendDeleteReceived(deleteMessage.getVersion(), Peer.id, file_id);
         }
     }

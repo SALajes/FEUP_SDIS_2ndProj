@@ -19,25 +19,13 @@ public class RestoreProtocol {
 
     public static void sendGetChunk(String file_id, int number_of_chunks){
 
-        if(Peer.version == Macros.ENHANCED_VERSION) {
+        if(Peer.version == Macros.VERSION) {
             for (int i = 0; i < number_of_chunks; i++) {
                 int chunk_no = i;
                 Runnable task = () -> processGetChunkEnhancement(file_id, chunk_no);
                 Peer.scheduled_executor.execute(task);
             }
-        } else {
-            //Restore all chunks
-            for (int i = 0; i < number_of_chunks; i++) {
-                GetChunkMessage getChunkMessage = new GetChunkMessage(Peer.version, Peer.id, file_id, i);
-
-                Runnable task = () -> processGetChunk(getChunkMessage);
-                Peer.scheduled_executor.execute(task);
-            }
         }
-    }
-
-    public static void processGetChunk(GetChunkMessage getChunkMessage){
-        Peer.MC.sendMessage(getChunkMessage.convertMessage());
     }
 
     /**

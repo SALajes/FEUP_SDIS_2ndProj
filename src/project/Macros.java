@@ -4,8 +4,7 @@ public class Macros {
     public final static byte CR = 0xD;
     public final static byte LF = 0xA;
 
-    public static final Double BASIC_VERSION = 1.0;
-    public static final Double ENHANCED_VERSION = 2.0;
+    public static final Double VERSION = 1.0;
 
     public static final Integer TTL = 1;
 

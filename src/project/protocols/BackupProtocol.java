@@ -56,21 +56,14 @@ public class BackupProtocol {
             return;
         }
 
-        if(Peer.version == Macros.ENHANCED_VERSION && putchunk.getVersion() == Macros.ENHANCED_VERSION) {
+        if(putchunk.getVersion() == Macros.VERSION) {
             Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
             if(x == null){
                 Runnable task = ()-> sendStoredEnhanced(putchunk);
                 Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
             }
         }
-        else{
-            if(FileManager.storeChunk(file_id, putchunk.getChunkNo(), putchunk.getChunk(), putchunk.getReplicationDegree())){
-                StoredMessage stored = new StoredMessage(putchunk.getVersion(), Peer.id, putchunk.getFileId(), putchunk.getChunkNo());
 
-                Runnable task = ()-> sendStored(stored.convertMessage());
-                Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
-            }
-        }
     }
 
     private static void sendStored(byte[] message){
@@ -93,19 +86,18 @@ public class BackupProtocol {
         int peer_id = stored.getSenderId();
 
         if(FilesListing.getInstance().getFileName(file_id) != null) {
-            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id, Peer.version == Macros.ENHANCED_VERSION && stored.getVersion() == Macros.ENHANCED_VERSION)) {
+            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id, Peer.version == Macros.VERSION && stored.getVersion() == Macros.VERSION)) {
                 //condition is true is the replication degree has been accomplished
                 Runnable task = ()-> sendCancelBackup(stored);
                 Peer.scheduled_executor.execute(task);
             }
         } else {
-            if(Peer.version == Macros.ENHANCED_VERSION && stored.getVersion() == Macros.ENHANCED_VERSION) {
+            if(Peer.version == Macros.VERSION && stored.getVersion() == Macros.VERSION) {
                 if(!Store.getInstance().hasReplicationDegree(chunk_id)){
                     //adds to the replication degree of the stored file
                     Store.getInstance().addReplicationDegree(chunk_id, peer_id);
                 }
             }
-            else Store.getInstance().addReplicationDegree(chunk_id, peer_id);
         }
     }
 

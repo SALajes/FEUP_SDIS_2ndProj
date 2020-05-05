@@ -65,7 +65,7 @@ public class Peer implements RemoteInterface {
         try{
             version = Double.parseDouble(args[0]);
 
-            if( version != Macros.BASIC_VERSION && version != Macros.ENHANCED_VERSION) {
+            if( version != Macros.VERSION) {
                 System.out.println("Not a recognizable version");
                 System.exit(-1);
             }
@@ -170,15 +170,6 @@ public class Peer implements RemoteInterface {
 
         //sends message DELETE to all peers
         DeleteProtocol.sendDelete(file_id);
-
-        if(Peer.version == Macros.BASIC_VERSION) {
-
-            // Remove entry with the file_name and correspond file_id from allFiles
-            FilesListing.getInstance().delete_file_records(file_name, file_id);
-
-            System.out.println("Deleting chunks in all peers");
-
-        }
 
         return 0;
     }
