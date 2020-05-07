@@ -3,13 +3,14 @@ package project.store;
 import project.Macros;
 import project.peer.Peer;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Store {
+public class Store implements Serializable {
     private static Store store = new Store();
 
     //state of others chunks
@@ -70,6 +71,7 @@ public class Store {
         return store;
     }
 
+    public static void setInstance(Store storage) { Store.store = storage; }
 
     // ---------------------------------------------- RECLAIM -----------------------------------
 

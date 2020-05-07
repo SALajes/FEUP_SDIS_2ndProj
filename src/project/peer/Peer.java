@@ -1,6 +1,6 @@
 package project.peer;
 
-import java.io.File;
+import java.io.*;
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -87,11 +87,15 @@ public class Peer implements RemoteInterface {
 
             registry.rebind(service_access_point, stub);
 
+            loadStorage();
+
             //creates folders
             Store.getInstance();
             FilesListing.getInstance();
 
             System.out.println("Peer " + id + " ready");
+
+            Runtime.getRuntime().addShutdownHook(new Thread(Peer::saveStorage));
 
         } catch (Exception e) {
             System.err.println("Peer exception: " + e.toString());
@@ -268,4 +272,45 @@ public class Peer implements RemoteInterface {
 
         return state + "---------------------------";
     }
+
+    private static void saveStorage() {
+        try {
+            String file_name = "peers/storage/" + Peer.id + ".ser";
+
+            File file = new File(file_name);
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            }
+
+            FileOutputStream file_output = new FileOutputStream(file_name);
+            ObjectOutputStream output = new ObjectOutputStream(file_output);
+            output.writeObject(Store.getInstance());
+            output.close();
+            file_output.close();
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
+    }
+
+    private static void loadStorage() {
+        try {
+            String file_name = "peers/storage/" + Peer.id + ".ser";
+
+            File file = new File(file_name);
+            if (!file.exists()) {
+                return;
+            }
+
+            FileInputStream file_input = new FileInputStream(file_name);
+            ObjectInputStream input = new ObjectInputStream(file_input);
+            Store.setInstance((Store) input.readObject());
+            input.close();
+            file_input.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
