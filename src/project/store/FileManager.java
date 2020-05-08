@@ -6,6 +6,7 @@ import project.peer.Peer;
 import project.protocols.ReclaimProtocol;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
@@ -82,6 +83,7 @@ public class FileManager {
 
         //encoded file name uses the file.lastModified() that ensures that a modified file has a different fileId
         String file_name_to_encode = file_name + file.lastModified();
+        System.out.println(file_name_to_encode);
 
         //identifier is obtained by applying SHA256, a cryptographic hash function, to some bit string.
         MessageDigest digest = null;
@@ -90,11 +92,29 @@ public class FileManager {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
+
         byte[] hash = digest.digest(file_name_to_encode.getBytes(StandardCharsets.UTF_8));
 
-        return String.valueOf(hash);
+        return toHexString(hash);
     }
 
+    //get from https://www.geeksforgeeks.org/sha-256-hash-in-java/
+    public static String toHexString(byte[] hash)
+    {
+        // Convert byte array into signum representation
+        BigInteger number = new BigInteger(1, hash);
+
+        // Convert message digest into hex value
+        StringBuilder hexString = new StringBuilder(number.toString(16));
+
+        // Pad with leading zeros
+        while (hexString.length() < 32)
+        {
+            hexString.insert(0, '0');
+        }
+
+        return hexString.toString();
+    }
 
     /**
      * This functions append the body of a chunk (file data) in the position desired ( calculated with chunk number)
