@@ -1,7 +1,6 @@
 package project.message;
 
 import project.Macros;
-import project.peer.Peer;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,8 +36,7 @@ public class MessageParser {
     private static List<String> getMessageHeaderFields( String header) throws InvalidMessageException {
         List<String> header_fields = Arrays.asList(header.split(" "));
 
-        //Shorter header is "<Version> DELETE <SenderId> <FileId> <CRLF><CRLF>"
-        if (header_fields.size() < 4) {
+        if (header_fields.size() < 3) {
             throw new InvalidMessageException("Received invalid message header");
         }
         return header_fields;
@@ -71,79 +69,82 @@ public class MessageParser {
 
         List<String> message_header = getMessageHeaderFields(new String(message, 0, first_CRLF_position));
 
-        switch (Message_Type.valueOf(message_header.get(1))) {
+        switch (Message_Type.valueOf(message_header.get(0))) {
             case PUTCHUNK:
                 return new PutChunkMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim(), //file_id
-                        Integer.parseInt(message_header.get(4).trim()), //chunk_no
-                        Integer.parseInt(message_header.get(5).trim()), //replication_dregree
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim(), //file_id
+                        Integer.parseInt(message_header.get(3).trim()), //chunk_no
+                        Integer.parseInt(message_header.get(4).trim()), //replication_dregree
                         getMessageBody(message, message_length, first_CRLF_position) //only send body
                 );
             case STORED:
                 return new StoredMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3), //file_id
-                        Integer.parseInt(message_header.get(4).trim()) //chunk_no
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2), //file_id
+                        Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case GETCHUNK:
                 return new GetChunkMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim(), //file_id
-                        Integer.parseInt(message_header.get(4).trim()) //chunk_no
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim(), //file_id
+                        Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case GETCHUNKENHANCED:
                 return new GetChunkEnhancementMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim(), //file_id
-                        Integer.parseInt(message_header.get(4).trim()), //chunk_no
-                        Integer.parseInt(message_header.get(5).trim()),
-                        message_header.get(6).trim()
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim(), //file_id
+                        Integer.parseInt(message_header.get(3).trim()), //chunk_no
+                        Integer.parseInt(message_header.get(4).trim()),
+                        message_header.get(5).trim()
                         //message without a body
                 );
             case CHUNK:
                 return new ChunkMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim(), //file_id
-                        Integer.parseInt(message_header.get(4).trim()), //chunk_no
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim(), //file_id
+                        Integer.parseInt(message_header.get(3).trim()), //chunk_no
                         getMessageBody(message, message_length, first_CRLF_position) //only send body
                 );
             case DELETE:
                 return new DeleteMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim() //file_id
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim() //file_id
                         //message without a body
                 );
             case DELETERECEIVED:
                 return new DeleteReceivedMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim() //file_id
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim() //file_id
                         //message without a body
                 );
             case REMOVED:
                 return new RemovedMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim(), //file_id
-                        Integer.parseInt(message_header.get(4).trim()) //chunk_no
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim(), //file_id
+                        Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case CANCELBACKUP:
                 return new CancelBackupMessage(
-                        Double.parseDouble(message_header.get(0).trim()), //version
-                        Integer.parseInt(message_header.get(2).trim()), //sender_id
-                        message_header.get(3).trim(), //file_id
-                        Integer.parseInt(message_header.get(4).trim()), //chunk_no
-                        Integer.parseInt(message_header.get(5).trim()) //receiver_id
+                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        message_header.get(2).trim(), //file_id
+                        Integer.parseInt(message_header.get(3).trim()), //chunk_no
+                        Integer.parseInt(message_header.get(4).trim()) //receiver_id
+                );
+            case CONNECTIONREQUEST:
+                return new ConnectionRequestMessage(
+                        Integer.parseInt(message_header.get(1).trim()),
+                        message_header.get(2).trim(),
+                        Integer.parseInt(message_header.get(3).trim())
+                );
+            case CONNECTIONRESPONSE:
+                return new ConnectionResponseMessage(
+                        Integer.parseInt(message_header.get(1).trim()),
+                        message_header.get(2).trim(),
+                        Integer.parseInt(message_header.get(3).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");

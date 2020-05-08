@@ -18,13 +18,10 @@ import java.util.concurrent.TimeUnit;
 public class RestoreProtocol {
 
     public static void sendGetChunk(String file_id, int number_of_chunks){
-
-        if(Peer.version == Macros.VERSION) {
-            for (int i = 0; i < number_of_chunks; i++) {
-                int chunk_no = i;
-                Runnable task = () -> processGetChunkEnhancement(file_id, chunk_no);
-                Peer.scheduled_executor.execute(task);
-            }
+        for (int i = 0; i < number_of_chunks; i++) {
+            int chunk_no = i;
+            Runnable task = () -> processGetChunkEnhancement(file_id, chunk_no);
+            Peer.scheduled_executor.execute(task);
         }
     }
 
@@ -59,7 +56,6 @@ public class RestoreProtocol {
             Peer.MDR.sendMessage(chunkMessage.convertMessage());
         Store.getInstance().removeGetchunkReply(chunk_id);
     }
-
 
     public static void receiveChunk(ChunkMessage chunkMessage){
         String file_id = chunkMessage.getFileId();

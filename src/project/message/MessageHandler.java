@@ -1,35 +1,23 @@
-package project.channel;
+package project.message;
 
-import project.message.*;
 import project.peer.Peer;
-import project.protocols.*;
+import project.protocols.BackupProtocol;
+import project.protocols.DeleteProtocol;
+import project.protocols.ReclaimProtocol;
+import project.protocols.RestoreProtocol;
 
-import java.net.DatagramPacket;
-
-public class MulticastControlChannel extends Channel {
-
-    public MulticastControlChannel(String address, int port) {
-        super(address, port);
-    }
-
-    @Override
-    protected void readableMessage(DatagramPacket packet) {
-
+public class MessageHandler {
+    public static void handleMessage(byte[] raw_message){
         try {
-            byte [] raw_message = packet.getData();
             BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
-
-            if(message.getSenderId() == Peer.id){
-                return;
-            }
 
             switch (message.getMessageType()) {
                 case STORED:
                     BackupProtocol.receiveStored((StoredMessage) message);
                     break;
                 case GETCHUNK:
-                   RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
-                   break;
+                    RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
+                    break;
                 case GETCHUNKENHANCED:
                     RestoreProtocol.receiveGetChunkEnhancement((GetChunkEnhancementMessage) message);
                 case DELETE:
@@ -40,6 +28,15 @@ public class MulticastControlChannel extends Channel {
                     break;
                 case REMOVED:
                     ReclaimProtocol.receiveRemoved((RemovedMessage) message);
+                    break;
+                case PUTCHUNK:
+                    BackupProtocol.receivePutchunk((PutChunkMessage) message);
+                    break;
+                case CANCELBACKUP:
+                    BackupProtocol.receiveCancelBackup((CancelBackupMessage) message);
+                    break;
+                case CHUNK:
+                    RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
                 default:
                     System.out.println("Invalid message type for Control Channel: " + message.getMessageType());

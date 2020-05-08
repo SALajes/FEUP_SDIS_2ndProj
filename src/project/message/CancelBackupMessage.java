@@ -1,11 +1,11 @@
 package project.message;
 
-public class CancelBackupMessage extends BaseMessage{
+public class CancelBackupMessage extends ProtocolMessage {
     private final int receiver_id;
     private final int chunk_no;
 
-    public CancelBackupMessage(double version, int sender_id, String file_id, int chunk_no, int receiver_id) {
-        super(version, Message_Type.CANCELBACKUP, sender_id, file_id);
+    public CancelBackupMessage(int sender_id, String file_id, int chunk_no, int receiver_id) {
+        super(Message_Type.CANCELBACKUP, sender_id, file_id);
         this.receiver_id = receiver_id;
         this.chunk_no = chunk_no;
     }

@@ -1,10 +1,10 @@
 package project.message;
 
-public class GetChunkMessage extends BaseMessage {
+public class GetChunkMessage extends ProtocolMessage {
     private final Integer chunk_no;
 
-    public GetChunkMessage(double version, int sender_id, String file_id, Integer chunk_no) {
-        super(version, Message_Type.GETCHUNK, sender_id, file_id);
+    public GetChunkMessage(int sender_id, String file_id, Integer chunk_no) {
+        super(Message_Type.GETCHUNK, sender_id, file_id);
 
         this.chunk_no = chunk_no;
     }

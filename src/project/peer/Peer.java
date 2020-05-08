@@ -2,6 +2,7 @@ package project.peer;
 
 import java.io.File;
 
+import java.io.IOException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -28,54 +29,65 @@ import project.store.Store;
 
 public class Peer implements RemoteInterface {
     private static final int RegistryPort = 1099;
-    public static double version;
     public static int id;
 
     private static String service_access_point;
 
-    //Addresses, ports and InetAdress of each channel
-    public static MulticastControlChannel MC;
-    public static MulticastDataBackupChannel MDB;
-    public static MulticastDataRecoveryChannel MDR;
+    public static ScheduledThreadPoolExecutor scheduled_executor = new ScheduledThreadPoolExecutor(0);
 
-    public static ExecutorService channel_executor;
-    public static ScheduledThreadPoolExecutor scheduled_executor;
+    public static ChordNode node;
 
-    public Peer(String MC_address, int MC_port, String MDB_address, int MDB_port, String MDR_address, int MDR_port)  {
-        MC = new MulticastControlChannel(MC_address, MC_port);
-        MDB = new MulticastDataBackupChannel(MDB_address, MDB_port);
-        MDR = new MulticastDataRecoveryChannel(MDR_address, MDR_port);
+    public Peer(int port) throws IOException {
+        node = new ChordNode(port);
+    }
 
-        channel_executor = Executors.newCachedThreadPool();
-        channel_executor.submit(MC);
-        channel_executor.submit(MDB);
-        channel_executor.submit(MDR);
+    public Peer(int port, String neighbour_address, int neighbour_port) throws IOException {
+        node = new ChordNode(port, neighbour_address, neighbour_port);
+    }
 
-        scheduled_executor = new ScheduledThreadPoolExecutor(0);
+    private static void usage(){
+        System.out.println("Usage: [package]Peer <peer_id> <service_access_point> <port> [<neighbour_address> <neighbour_port>]");
     }
 
     //class methods
     public static void main(String[] args){
-        if(args.length != 9){
-            System.out.println("Usage: [package]Peer <protocol_version> <peer_id> <service_access_point> " +
-                    "<MC_address> <MC_port> <MDB_address> <MDB_port> <MDR_address> <MDR_port>");
+        if(args.length < 3){
+            usage();
             return;
         }
 
         try{
-            version = Double.parseDouble(args[0]);
+            id = Integer.parseInt(args[0]);
 
-            if( version != Macros.VERSION) {
-                System.out.println("Not a recognizable version");
-                System.exit(-1);
+            service_access_point = args[1];
+
+            int port = Integer.parseInt(args[2]);
+
+            if( port <1024 || port>= 1<<16){
+                System.out.println("\t <port> must be a 16 bit integer");
+                return;
             }
 
-            id = Integer.parseInt(args[1]);
+            Peer object_peer;
 
-            //since we are using RMI transport protocol, then the access_point is <remote_object_name>
-            service_access_point = args[2];
+            try{
+                if(args.length == 3){
+                    object_peer = new Peer(port);
+                }
+                else if (args.length == 5) {
+                    object_peer = new Peer(port, args[3], Integer.parseInt(args[4]));
+                }
+                else{
+                    usage();
+                    return;
+                }
+            }
+            catch( IOException e) {
+                System.out.println("Server - Failed to create SSLServerSocket");
+                e.getMessage();
+                return;
+            }
 
-            Peer object_peer = new Peer(args[3], Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]), args[7], Integer.parseInt(args[8]));
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(object_peer, 0);
 
             Registry registry;
@@ -117,7 +129,7 @@ public class Peer implements RemoteInterface {
         FilesListing.getInstance().add_file(file.getName(), file_id, number_of_chunks);
 
         ChunkFactory chunkFactory = new ChunkFactory(file, replication_degree);
-        BackupProtocol.sendPutchunk(Peer.version, Peer.id, replication_degree, file_id, chunkFactory.getChunks());
+       // BackupProtocol.sendPutchunk(Peer.version, Peer.id, replication_degree, file_id, chunkFactory.getChunks());
 
         return 0;
     }
