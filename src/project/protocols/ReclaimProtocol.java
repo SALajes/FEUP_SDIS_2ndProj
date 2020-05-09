@@ -7,19 +7,40 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class ReclaimProtocol {
-    public static void sendRemoved(Double version, Integer sender_id, String file_id, Integer chunk_number){
-        RemovedMessage removedMessage = new RemovedMessage(version, sender_id, file_id, chunk_number);
+import static project.Macros.checkPort;
+
+public class ReclaimProtocol extends BasicProtocol{
+
+    public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number){
+
+        //TODO: change with chord
+        String host = "this.peer";
+        Integer port = 1025;
+
+        if(checkPort(port)){
+            return;
+        }
+
+        try {
+            sslSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        RemovedMessage removedMessage = new RemovedMessage( sender_id, file_id, chunk_number);
         Runnable task = () -> processRemoveMessage(removedMessage);
         new Thread(task).start();
 
     }
 
     public static void processRemoveMessage(RemovedMessage removedMessage){
-        Peer.MC.sendMessage(removedMessage.convertMessage());
+       // Peer.MC.sendMessage(removedMessage.convertMessage());
     }
 
 
@@ -45,7 +66,7 @@ public class ReclaimProtocol {
                 Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
 
                 if(chunk != null) {
-                    Runnable task = () -> sendPutchunk(Peer.version, Peer.id, Store.getInstance().getReplicationDegree(chunk_id), file_id, chunk);
+                    Runnable task = () -> sendPutchunk( Peer.id, Store.getInstance().getReplicationDegree(chunk_id), file_id, chunk);
 
                     //initiate the chunk backup subprotocol after a random delay uniformly distributed between 0 and 400 ms
                     Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
@@ -54,10 +75,10 @@ public class ReclaimProtocol {
         }
     }
 
-    public static void sendPutchunk(double version, int sender_id, int replication_degree, String file_id, Chunk chunk) {
+    public static void sendPutchunk(int sender_id, int replication_degree, String file_id, Chunk chunk) {
         //send put chunk
 
-        PutChunkMessage putchunk = new PutChunkMessage(version, sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
+        PutChunkMessage putchunk = new PutChunkMessage( sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
 
@@ -77,7 +98,7 @@ public class ReclaimProtocol {
             return;
         }
 
-        Peer.MDB.sendMessage(message);
+       // Peer.MDB.sendMessage(message);
 
         int try_aux = tries + 1;
         long time = (long) Math.pow(2, try_aux-1);

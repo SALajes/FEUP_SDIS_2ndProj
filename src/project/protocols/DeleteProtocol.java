@@ -1,23 +1,41 @@
 package project.protocols;
 
-import project.Macros;
 import project.message.*;
 import project.peer.Peer;
 import project.store.FileManager;
 import project.store.FilesListing;
 import project.store.Store;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class DeleteProtocol {
+import static project.Macros.checkPort;
+
+public class DeleteProtocol extends BasicProtocol{
 
     public static void sendDelete(String file_id){
-        DeleteMessage deleteMessage = new DeleteMessage( Peer.version, Peer.id, file_id);
-        Runnable task = () -> processDeleteEnhancement(deleteMessage.convertMessage(), file_id, 0);
+
+        //TODO: change with chord
+        String host = "this.peer";
+        Integer port = 1025;
+
+        if( checkPort(port)){
+            return;
+        }
+
+        try {
+            sslSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        DeleteMessage deleteMessage = new DeleteMessage( Peer.id, file_id);
+        SSLSocket finalSslSocket = sslSocket;
+        Runnable task = () -> processDelete(finalSslSocket, deleteMessage, file_id, 0);
         Peer.scheduled_executor.execute(task);
     }
-
-
 
     public static void receiveDelete(DeleteMessage deleteMessage){
         String file_id = deleteMessage.getFileId();
@@ -26,14 +44,11 @@ public class DeleteProtocol {
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
         Store.getInstance().removeStoredChunks(file_id);
 
-        if(deleteMessage.getVersion() == Macros.VERSION) {
-            sendDeleteReceived(deleteMessage.getVersion(), Peer.id, file_id);
-        }
+        sendDeleteReceived(Peer.id, file_id);
+
     }
 
-    // -------------  Delete enhancement  -----------------------------------------
-
-    public static void processDeleteEnhancement(byte[] message, String file_id, int tries){
+    public static void processDelete(SSLSocket sslSocket, DeleteMessage message, String file_id, int tries){
         if(tries >= 10){
             System.out.println("Couldn't delete all chunks of the file " + file_id);
             Store.getInstance().changeFromBackupToDelete(file_id);
@@ -57,17 +72,17 @@ public class DeleteProtocol {
             return;
         }
 
-        Peer.MC.sendMessage(message);
+        sendWithTCP(message);
 
         int try_aux = tries + 1;
 
         long time = (long) Math.pow(3, try_aux-1);
-        Runnable task = () -> processDeleteEnhancement(message, file_id, try_aux);
+        Runnable task = () -> processDelete(sslSocket, message, file_id, try_aux);
         Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
     }
 
-    public static void sendDeleteReceived(double version, int sender_id, String file_id){
-        DeleteReceivedMessage message = new DeleteReceivedMessage(version, sender_id, file_id);
+    public static void sendDeleteReceived( int sender_id, String file_id){
+        DeleteReceivedMessage message = new DeleteReceivedMessage( sender_id, file_id);
 
         Runnable task = () -> processDeleteReceived(message);
 
@@ -75,7 +90,7 @@ public class DeleteProtocol {
     }
 
     public static void processDeleteReceived(DeleteReceivedMessage message){
-        Peer.MC.sendMessage(message.convertMessage());
+       // Peer.MC.sendMessage(message.convertMessage());
     }
 
     public static void receiveDeleteReceived(DeleteReceivedMessage message) {

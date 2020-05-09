@@ -1,6 +1,5 @@
 package project.protocols;
 
-import project.Macros;
 import project.chunk.Chunk;
 import project.message.*;
 import project.peer.Peer;
@@ -15,9 +14,12 @@ import java.net.*;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class RestoreProtocol {
+public class RestoreProtocol extends BasicProtocol{
 
     public static void sendGetChunk(String file_id, int number_of_chunks){
+
+        openSocket();
+
         for (int i = 0; i < number_of_chunks; i++) {
             int chunk_no = i;
             Runnable task = () -> processGetChunkEnhancement(file_id, chunk_no);
@@ -38,11 +40,11 @@ public class RestoreProtocol {
         if (chunk == null)
            return;
 
-        sendChunk(getChunkMessage.getVersion(), Peer.id, file_id, chunk_number, chunk.content);
+        sendChunk(Peer.id, file_id, chunk_number, chunk.content);
     }
 
-    public static void sendChunk(double version, Integer sender_id, String file_id, Integer chunk_no, byte[] chunk_data){
-        ChunkMessage chunkMessage = new ChunkMessage(version, sender_id, file_id, chunk_no, chunk_data);
+    public static void sendChunk( Integer sender_id, String file_id, Integer chunk_no, byte[] chunk_data){
+        ChunkMessage chunkMessage = new ChunkMessage( sender_id, file_id, chunk_no, chunk_data);
 
         String chunk_id = chunkMessage.getFileId() + "_" + chunkMessage.getChunkNo();
         Store.getInstance().addGetchunkReply(chunk_id);
@@ -52,8 +54,8 @@ public class RestoreProtocol {
     }
 
     public static void processChunk(ChunkMessage chunkMessage, String chunk_id){
-        if(!Store.getInstance().getGetchunkReply(chunk_id))
-            Peer.MDR.sendMessage(chunkMessage.convertMessage());
+       // if(!Store.getInstance().getGetchunkReply(chunk_id))
+        //    Peer.MDR.sendMessage(chunkMessage.convertMessage());
         Store.getInstance().removeGetchunkReply(chunk_id);
     }
 
@@ -71,7 +73,6 @@ public class RestoreProtocol {
     }
 
 
-    //--------------------- ENHANCED VERSION ------------------
     public static void processGetChunkEnhancement(String file_id, int chunk_no){
         ServerSocket server_socket = null;
 
@@ -92,10 +93,10 @@ public class RestoreProtocol {
             return;
         }
 
-        GetChunkEnhancementMessage message = new GetChunkEnhancementMessage(Peer.version, Peer.id,
-                file_id, chunk_no, port , address);
+        GetChunkEnhancementMessage message = new GetChunkEnhancementMessage( Peer.id, file_id, chunk_no, port , address);
 
-        Peer.MC.sendMessage(message.convertMessage());
+        sendWithTCP(message);
+
 
         try {
             server_socket.setSoTimeout(10000);
@@ -131,7 +132,7 @@ public class RestoreProtocol {
         if (chunk == null)
             return;
 
-        ChunkMessage chunkMessage = new ChunkMessage(Peer.version, Peer.id, file_id, chunk_no, chunk.content);
+        ChunkMessage chunkMessage = new ChunkMessage( Peer.id, file_id, chunk_no, chunk.content);
 
         try {
             Socket socket = new Socket(InetAddress.getByName(message.getAddress()), message.getPort());

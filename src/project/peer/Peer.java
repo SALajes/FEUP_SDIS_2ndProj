@@ -9,23 +9,19 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.concurrent.*;
-
-
 import project.InvalidFileException;
 import project.Macros;
 
-import project.channel.*;
 import project.chunk.ChunkFactory;
 import project.message.InvalidMessageException;
-import project.protocols.BackupProtocol;
 import project.protocols.DeleteProtocol;
 import project.protocols.RestoreProtocol;
 import project.store.FileManager;
 import project.store.FilesListing;
 import project.store.Pair;
 import project.store.Store;
+
 
 public class Peer implements RemoteInterface {
     private static final int RegistryPort = 1099;
@@ -63,8 +59,7 @@ public class Peer implements RemoteInterface {
 
             int port = Integer.parseInt(args[2]);
 
-            if( port <1024 || port>= 1<<16){
-                System.out.println("\t <port> must be a 16 bit integer");
+            if( Macros.checkPort(port)){
                 return;
             }
 

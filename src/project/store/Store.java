@@ -347,14 +347,14 @@ public class Store {
     }
 
     //returns true in case there
-    public boolean addBackupChunksOccurrences(String chunk_id, int peer_id, boolean enhanced_version) {
+    public boolean addBackupChunksOccurrences(String chunk_id, int peer_id) {
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
             Pair<Integer, ArrayList<Integer>> pair = this.backup_chunks_occurrences.get(chunk_id);
 
             if(pair.second.contains(peer_id))
                 return false;
 
-            if(enhanced_version && (checkBackupChunksOccurrences(chunk_id) >= getBackupChunkReplicationDegree(chunk_id)))
+            if(checkBackupChunksOccurrences(chunk_id) >= getBackupChunkReplicationDegree(chunk_id))
                 return true;
 
             pair.second.add(peer_id);

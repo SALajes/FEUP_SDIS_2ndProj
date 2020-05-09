@@ -184,7 +184,8 @@ public class FileManager {
             for (File f : folder_files) {
                 if (f.isFile()) {
                     Store.getInstance().RemoveOccupiedStorage(f.length());
-                    f.delete();
+                    if(!f.delete())
+                        return false;
                 }
                 else if (!f.delete()) {
                     return false;
@@ -222,13 +223,11 @@ public class FileManager {
 
             Future result = channel.read(buffer, 0); // position = 0
 
-            while (! result.isDone());
+            while (!result.isDone());
 
             try {
                result.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -302,7 +301,7 @@ public class FileManager {
             Store.getInstance().removeStoredChunk(file_id, chunk_number);
 
             if(reclaim_protocol)
-                ReclaimProtocol.sendRemoved(Peer.version, Peer.id, file_id, chunk_number);
+                ReclaimProtocol.sendRemoved( Peer.id, file_id, chunk_number);
 
             return true;
         }

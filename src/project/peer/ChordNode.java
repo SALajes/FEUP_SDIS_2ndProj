@@ -25,7 +25,6 @@ public class ChordNode {
     private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
 
     private SSLServerSocket server_socket = null;
-    private SSLServerSocketFactory server_socket_factory = null;
     private SSLSocketFactory socket_factory = null;
 
     public ChordNode(int port) throws IOException {
@@ -42,8 +41,7 @@ public class ChordNode {
     }
 
     private void initiateServerSockets() throws IOException {
-        this.server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this.port);
+        this.server_socket = (SSLServerSocket) SSLServerSocketFactory.getDefault().createServerSocket(this.port);
         this.socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
