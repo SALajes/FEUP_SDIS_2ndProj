@@ -10,17 +10,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.net.Socket;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChordNode {
-    private final int m = 128;
     private int number_of_peers;
 
     private final String IP = InetAddress.getLocalHost().getHostAddress();
     private final int port;
 
-    private String key;
+    private UUID key = UUID.randomUUID();
 
     private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
 
@@ -60,7 +59,6 @@ public class ChordNode {
             ConnectionResponseMessage response_message = (ConnectionResponseMessage) MessageParser.parseMessage(response, response.length);
 
             number_of_peers = response_message.getNumberOfPeers();
-            key = response_message.getKey();
 
             connection_socket.close();
         } catch (IOException | InvalidMessageException | ClassNotFoundException e) {
@@ -86,10 +84,10 @@ public class ChordNode {
     private void receiveRequest(SSLSocket socket) {
         try {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-            byte[] response = (byte[]) objectInputStream.readObject();
-            MessageHandler.handleMessage(response);
+            byte[] request = (byte[]) objectInputStream.readObject();
 
-            //dar resposta
+            BaseMessage response = MessageHandler.handleMessage(request);
+
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

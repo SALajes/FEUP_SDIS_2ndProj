@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class DeleteProtocol {
 
     public static void sendDelete(String file_id){
-        DeleteMessage deleteMessage = new DeleteMessage( Peer.version, Peer.id, file_id);
+        DeleteMessage deleteMessage = new DeleteMessage(Peer.id, file_id);
         Runnable task = () -> processDeleteEnhancement(deleteMessage.convertMessage(), file_id, 0);
         Peer.scheduled_executor.execute(task);
     }
@@ -26,9 +26,7 @@ public class DeleteProtocol {
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
         Store.getInstance().removeStoredChunks(file_id);
 
-        if(deleteMessage.getVersion() == Macros.VERSION) {
-            sendDeleteReceived(deleteMessage.getVersion(), Peer.id, file_id);
-        }
+        sendDeleteReceived(Peer.id, file_id);
     }
 
     // -------------  Delete enhancement  -----------------------------------------
@@ -57,7 +55,7 @@ public class DeleteProtocol {
             return;
         }
 
-        Peer.MC.sendMessage(message);
+      //  Peer.MC.sendMessage(message);
 
         int try_aux = tries + 1;
 
@@ -66,8 +64,8 @@ public class DeleteProtocol {
         Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
     }
 
-    public static void sendDeleteReceived(double version, int sender_id, String file_id){
-        DeleteReceivedMessage message = new DeleteReceivedMessage(version, sender_id, file_id);
+    public static void sendDeleteReceived(int sender_id, String file_id){
+        DeleteReceivedMessage message = new DeleteReceivedMessage(sender_id, file_id);
 
         Runnable task = () -> processDeleteReceived(message);
 
@@ -75,7 +73,7 @@ public class DeleteProtocol {
     }
 
     public static void processDeleteReceived(DeleteReceivedMessage message){
-        Peer.MC.sendMessage(message.convertMessage());
+       // Peer.MC.sendMessage(message.convertMessage());
     }
 
     public static void receiveDeleteReceived(DeleteReceivedMessage message) {

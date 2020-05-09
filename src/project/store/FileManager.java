@@ -302,7 +302,7 @@ public class FileManager {
             Store.getInstance().removeStoredChunk(file_id, chunk_number);
 
             if(reclaim_protocol)
-                ReclaimProtocol.sendRemoved(Peer.version, Peer.id, file_id, chunk_number);
+                ReclaimProtocol.sendRemoved(Peer.id, file_id, chunk_number);
 
             return true;
         }

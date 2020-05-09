@@ -1,13 +1,12 @@
 package project.message;
 
-import project.peer.Peer;
 import project.protocols.BackupProtocol;
 import project.protocols.DeleteProtocol;
 import project.protocols.ReclaimProtocol;
 import project.protocols.RestoreProtocol;
 
 public class MessageHandler {
-    public static void handleMessage(byte[] raw_message){
+    public static BaseMessage handleMessage(byte[] raw_message){
         try {
             BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
 
@@ -39,11 +38,11 @@ public class MessageHandler {
                     RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
                 default:
-                    System.out.println("Invalid message type for Control Channel: " + message.getMessageType());
                     break;
             }
         } catch (InvalidMessageException e) {
             System.out.println(e.getMessage());
         }
+        return null;
     }
 }

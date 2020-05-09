@@ -16,7 +16,6 @@ import java.util.concurrent.*;
 import project.InvalidFileException;
 import project.Macros;
 
-import project.channel.*;
 import project.chunk.ChunkFactory;
 import project.message.InvalidMessageException;
 import project.protocols.BackupProtocol;
@@ -129,7 +128,7 @@ public class Peer implements RemoteInterface {
         FilesListing.getInstance().add_file(file.getName(), file_id, number_of_chunks);
 
         ChunkFactory chunkFactory = new ChunkFactory(file, replication_degree);
-       // BackupProtocol.sendPutchunk(Peer.version, Peer.id, replication_degree, file_id, chunkFactory.getChunks());
+        BackupProtocol.sendPutchunk(Peer.id, replication_degree, file_id, chunkFactory.getChunks());
 
         return 0;
     }
