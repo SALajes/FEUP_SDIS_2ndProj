@@ -1,7 +1,6 @@
 package project.store;
 
-import project.peer.Peer;
-import project.protocols.DeleteProtocol;
+import project.Pair;
 
 import java.io.*;
 import java.util.Iterator;

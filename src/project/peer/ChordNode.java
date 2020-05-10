@@ -1,6 +1,7 @@
 package project.peer;
 
 import project.message.*;
+import project.Pair;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -19,9 +20,13 @@ public class ChordNode {
     private final String IP = InetAddress.getLocalHost().getHostAddress();
     private final int port;
 
+    private final String[] cipher_server = {"server.keys", "truststore"};
+    private final String[] cipher_client = {"client.keys", "truststore"};
+
     private UUID key = UUID.randomUUID();
 
     private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, Pair<String, Integer>> successors_info = new ConcurrentHashMap<>();
 
     private SSLServerSocket server_socket = null;
     private SSLServerSocketFactory server_socket_factory = null;
@@ -47,23 +52,8 @@ public class ChordNode {
     }
 
     private void connectToNetwork(String neighbour_address, int neighbour_port) {
-        try {
-            ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.IP, this.port);
-            SSLSocket connection_socket = (SSLSocket) socket_factory.createSocket(neighbour_address, neighbour_port);
-
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(connection_socket.getOutputStream());
-            objectOutputStream.writeObject(request.convertMessage());
-
-            ObjectInputStream objectInputStream = new ObjectInputStream(connection_socket.getInputStream());
-            byte[] response = (byte[]) objectInputStream.readObject();
-            ConnectionResponseMessage response_message = (ConnectionResponseMessage) MessageParser.parseMessage(response, response.length);
-
-            number_of_peers = response_message.getNumberOfPeers();
-
-            connection_socket.close();
-        } catch (IOException | InvalidMessageException | ClassNotFoundException e) {
-            return;
-        }
+        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, neighbour_address, neighbour_port);
+        makeRequest(request, neighbour_address, neighbour_port);
     }
 
     private void run() {
@@ -83,18 +73,43 @@ public class ChordNode {
 
     private void receiveRequest(SSLSocket socket) {
         try {
+            socket.setEnabledCipherSuites(cipher_server);
+
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             byte[] request = (byte[]) objectInputStream.readObject();
 
             BaseMessage response = MessageHandler.handleMessage(request);
 
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectOutputStream.writeObject(response.convertMessage());
+
+            socket.close();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    public void makeRequest(){
+    public void makeRequest(BaseMessage request, String address, Integer port){
+        try {
+            SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
+            socket.setEnabledCipherSuites(cipher_client);
 
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectOutputStream.writeObject(request.convertMessage());
+
+            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+            byte[] raw_response = (byte[]) objectInputStream.readObject();
+
+            MessageHandler.handleMessage(raw_response);
+
+            socket.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Pair<String, Integer> getDestinationNode() {
+        return null;
     }
 
     public String findSuccessor(String key){

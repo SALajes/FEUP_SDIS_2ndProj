@@ -1,4 +1,4 @@
-package project.store;
+package project;
 
 public class Pair<U, V> {
 

@@ -1,6 +1,7 @@
 package project.store;
 
 import project.Macros;
+import project.Pair;
 import project.peer.Peer;
 
 import java.util.ArrayList;

@@ -9,7 +9,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.concurrent.*;
 
 
@@ -23,7 +22,7 @@ import project.protocols.DeleteProtocol;
 import project.protocols.RestoreProtocol;
 import project.store.FileManager;
 import project.store.FilesListing;
-import project.store.Pair;
+import project.Pair;
 import project.store.Store;
 
 public class Peer implements RemoteInterface {
