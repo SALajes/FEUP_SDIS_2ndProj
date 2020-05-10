@@ -24,8 +24,9 @@ public class ChordNode {
 
     private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
 
-    private SSLServerSocket server_socket = null;
-    private SSLSocketFactory socket_factory = null;
+    private static SSLServerSocket server_socket = null;
+    private static SSLSocketFactory socket_factory = null;
+    private static SSLSocket socket = null;
 
     public ChordNode(int port) throws IOException {
         this.port = port;
@@ -62,14 +63,14 @@ public class ChordNode {
 
             connection_socket.close();
         } catch (IOException | InvalidMessageException | ClassNotFoundException e) {
-            return;
+            e.printStackTrace();
         }
     }
 
     private void run() {
         while(true){
             try{
-                SSLSocket socket = (SSLSocket) server_socket.accept();
+                socket = (SSLSocket) server_socket.accept();
 
                 Runnable task = () -> receiveRequest(socket);
                 Peer.scheduled_executor.execute(task);
@@ -85,9 +86,9 @@ public class ChordNode {
         try {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             byte[] response = (byte[]) objectInputStream.readObject();
+            //gives response
             MessageHandler.handleMessage(response);
 
-            //dar resposta
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -99,5 +100,16 @@ public class ChordNode {
 
     public String findSuccessor(String key){
         return null;
+    }
+
+    public boolean respond(BaseMessage message) {
+        try {
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectOutputStream.writeObject(message.convertMessage());
+        } catch (IOException e) {
+            return false;
+        }
+
+        return true;
     }
 }

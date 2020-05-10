@@ -54,15 +54,14 @@ public class RestoreProtocol extends BasicProtocol{
     }
 
     public static void processChunk(ChunkMessage chunkMessage, String chunk_id){
-       // if(!Store.getInstance().getGetchunkReply(chunk_id))
-        //    Peer.MDR.sendMessage(chunkMessage.convertMessage());
+       if(!Store.getInstance().getGetchunkReply(chunk_id))
+            Peer.node.respond(chunkMessage);
         Store.getInstance().removeGetchunkReply(chunk_id);
     }
 
     public static void receiveChunk(ChunkMessage chunkMessage){
         String file_id = chunkMessage.getFileId();
         String file_name = FilesListing.getInstance().getFileName(file_id);
-
         String chunk_id = file_id + "_" + chunkMessage.getChunkNo();
 
         if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
@@ -74,49 +73,10 @@ public class RestoreProtocol extends BasicProtocol{
 
 
     public static void processGetChunkEnhancement(String file_id, int chunk_no){
-        ServerSocket server_socket = null;
 
-        try {
-            server_socket = new ServerSocket(0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
+        Peer.node.respond(message);
 
-        Integer port = server_socket.getLocalPort();
-
-        String address;
-
-        try {
-            address = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        GetChunkEnhancementMessage message = new GetChunkEnhancementMessage( Peer.id, file_id, chunk_no, port , address);
-
-        sendWithTCP(message);
-
-
-        try {
-            server_socket.setSoTimeout(10000);
-
-            ServerSocket aux_server_socket = server_socket;
-            Runnable task = ()-> {
-                receiveChunkEnhancement(aux_server_socket);
-
-                try {
-                    aux_server_socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            };
-            Peer.scheduled_executor.execute(task);
-        } catch (SocketException e) {
-            e.printStackTrace();
-            System.err.println("No peer responded");
-            return;
-        }
     }
 
     public static void receiveGetChunkEnhancement(GetChunkEnhancementMessage message) {
@@ -140,7 +100,7 @@ public class RestoreProtocol extends BasicProtocol{
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(chunkMessage.convertMessage());
         } catch (IOException e) {
-            return;
+            e.printStackTrace();
         }
     }
 
@@ -157,14 +117,8 @@ public class RestoreProtocol extends BasicProtocol{
             if(FileManager.writeChunkToRestoredFile(file_name, chunkMessage.getChunk(), chunkMessage.getChunkNo())){
                 socket.close();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InvalidMessageException e) {
+        } catch (IOException | ClassNotFoundException | InvalidMessageException e) {
             e.printStackTrace();
         }
-
     }
 }

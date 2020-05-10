@@ -1,35 +1,20 @@
 package project.protocols;
 
-import project.message.*;
+import project.message.DeleteMessage;
+import project.message.DeleteReceivedMessage;
 import project.peer.Peer;
 import project.store.FileManager;
 import project.store.FilesListing;
 import project.store.Store;
 
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
-import static project.Macros.checkPort;
 
 public class DeleteProtocol extends BasicProtocol{
 
     public static void sendDelete(String file_id){
 
-        //TODO: change with chord
-        String host = "this.peer";
-        Integer port = 1025;
-
-        if( checkPort(port)){
-            return;
-        }
-
-        try {
-            sslSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        openSocket();
 
         DeleteMessage deleteMessage = new DeleteMessage( Peer.id, file_id);
         SSLSocket finalSslSocket = sslSocket;

@@ -7,47 +7,27 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import static project.Macros.checkPort;
 
 public class ReclaimProtocol extends BasicProtocol{
 
     public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number){
-
-        //TODO: change with chord
-        String host = "this.peer";
-        Integer port = 1025;
-
-        if(checkPort(port)){
-            return;
-        }
-
-        try {
-            sslSocket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        openSocket();
         RemovedMessage removedMessage = new RemovedMessage( sender_id, file_id, chunk_number);
         Runnable task = () -> processRemoveMessage(removedMessage);
         new Thread(task).start();
-
     }
 
     public static void processRemoveMessage(RemovedMessage removedMessage){
-       // Peer.MC.sendMessage(removedMessage.convertMessage());
+        sendWithTCP(removedMessage);
     }
 
 
     public static void receiveRemoved(RemovedMessage removedMessage ){
-
         String file_id = removedMessage.getFileId();
         Integer chunk_number = removedMessage.getChunkNo();
+
         String chunk_id = file_id + "_" + chunk_number;
 
         //check if this is this peer with a file
@@ -82,11 +62,11 @@ public class ReclaimProtocol extends BasicProtocol{
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
 
-        processPutchunk(putchunk.convertMessage(), putchunk.getReplicationDegree(), chunk_id, 0);
+        processPutchunk(putchunk, putchunk.getReplicationDegree(), chunk_id, 0);
 
     }
 
-    private static void processPutchunk(byte[] message, int replication_degree, String chunk_id, int tries) {
+    private static void processPutchunk(PutChunkMessage message, int replication_degree, String chunk_id, int tries) {
 
         if(tries >= 5){
             System.out.println("Put chunk failed desired replication degree: " + chunk_id);
@@ -99,6 +79,7 @@ public class ReclaimProtocol extends BasicProtocol{
         }
 
        // Peer.MDB.sendMessage(message);
+        sendWithTCP(message);
 
         int try_aux = tries + 1;
         long time = (long) Math.pow(2, try_aux-1);
