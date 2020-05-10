@@ -14,6 +14,15 @@ public class BasicProtocol {
     protected static SSLSocket sslSocket = null;
 
     protected static boolean openSocket() {
+        //close last sslSocket
+        if(sslSocket != null) {
+            try {
+                sslSocket.shutdownOutput();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         //TODO: change with chord
         String host = "this.peer";
         Integer port = 1025;
@@ -44,12 +53,12 @@ public class BasicProtocol {
         return true;
     }
 
-    protected boolean closeSocket() {
+    protected static boolean closeSocket() {
 
         try {
             System.out.println("Client: Server shut down output: closing");
             sslSocket.close();
-            sslSocket.shutdownOutput();
+           // sslSocket.shutdownOutput();
         } catch (IOException e){
             e.printStackTrace();
             return false;

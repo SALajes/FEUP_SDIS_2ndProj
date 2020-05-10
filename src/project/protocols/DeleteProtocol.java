@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DeleteProtocol extends BasicProtocol{
 
+    // -- peer initiator
     public static void sendDelete(String file_id){
 
         openSocket();
@@ -22,16 +23,6 @@ public class DeleteProtocol extends BasicProtocol{
         Peer.scheduled_executor.execute(task);
     }
 
-    public static void receiveDelete(DeleteMessage deleteMessage){
-        String file_id = deleteMessage.getFileId();
-
-        //delete all files and records in stored
-        FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
-        Store.getInstance().removeStoredChunks(file_id);
-
-        sendDeleteReceived(Peer.id, file_id);
-
-    }
 
     public static void processDelete(SSLSocket sslSocket, DeleteMessage message, String file_id, int tries){
         if(tries >= 10){
@@ -66,18 +57,6 @@ public class DeleteProtocol extends BasicProtocol{
         Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
     }
 
-    public static void sendDeleteReceived( int sender_id, String file_id){
-        DeleteReceivedMessage message = new DeleteReceivedMessage( sender_id, file_id);
-
-        Runnable task = () -> processDeleteReceived(message);
-
-        Peer.scheduled_executor.execute(task);
-    }
-
-    public static void processDeleteReceived(DeleteReceivedMessage message){
-       // Peer.MC.sendMessage(message.convertMessage());
-    }
-
     public static void receiveDeleteReceived(DeleteReceivedMessage message) {
 
         Integer peer_id = message.getSenderId();
@@ -94,7 +73,36 @@ public class DeleteProtocol extends BasicProtocol{
         }
 
         System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSenderId());
+
+        //end of the sub protocol call
+        closeSocket();
     }
+
+    // --- peer not initiator
+    public static void receiveDelete(DeleteMessage deleteMessage){
+        String file_id = deleteMessage.getFileId();
+
+        //delete all files and records in stored
+        FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
+        Store.getInstance().removeStoredChunks(file_id);
+
+        sendDeleteReceived(Peer.id, file_id);
+
+    }
+
+    public static void sendDeleteReceived( int sender_id, String file_id){
+        DeleteReceivedMessage message = new DeleteReceivedMessage( sender_id, file_id);
+
+        Runnable task = () -> processDeleteReceived(message);
+
+        Peer.scheduled_executor.execute(task);
+    }
+
+    public static void processDeleteReceived(DeleteReceivedMessage message){
+        Peer.node.respond(message);
+    }
+
+
 }
 
 

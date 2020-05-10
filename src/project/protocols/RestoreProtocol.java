@@ -16,17 +16,43 @@ import java.util.concurrent.TimeUnit;
 
 public class RestoreProtocol extends BasicProtocol{
 
+    // ---- peer initiator
     public static void sendGetChunk(String file_id, int number_of_chunks){
 
         openSocket();
 
         for (int i = 0; i < number_of_chunks; i++) {
             int chunk_no = i;
-            Runnable task = () -> processGetChunkEnhancement(file_id, chunk_no);
+            Runnable task = () -> processGetChunk(file_id, chunk_no);
             Peer.scheduled_executor.execute(task);
         }
     }
 
+    public static void processGetChunk(String file_id, int chunk_no){
+
+        GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
+        sendWithTCP(message);
+
+    }
+
+    public static void receiveChunk(ChunkMessage chunkMessage){
+        String file_id = chunkMessage.getFileId();
+        String file_name = FilesListing.getInstance().getFileName(file_id);
+        String chunk_id = file_id + "_" + chunkMessage.getChunkNo();
+
+        if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
+            FileManager.writeChunkToRestoredFile(file_name, chunkMessage.getChunk(), chunkMessage.getChunkNo());
+        }
+
+        Store.getInstance().checkGetchunkReply(chunk_id);
+
+        //end of the sub protocol call
+        closeSocket();
+    }
+
+
+
+    //------ peer not initiator
     /**
      * a peer that has a copy of the specified chunk shall send it in the body of a CHUNK message via the MDR channel
      * @param  getChunkMessage message received
@@ -59,25 +85,9 @@ public class RestoreProtocol extends BasicProtocol{
         Store.getInstance().removeGetchunkReply(chunk_id);
     }
 
-    public static void receiveChunk(ChunkMessage chunkMessage){
-        String file_id = chunkMessage.getFileId();
-        String file_name = FilesListing.getInstance().getFileName(file_id);
-        String chunk_id = file_id + "_" + chunkMessage.getChunkNo();
-
-        if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
-            FileManager.writeChunkToRestoredFile(file_name, chunkMessage.getChunk(), chunkMessage.getChunkNo());
-        }
-
-        Store.getInstance().checkGetchunkReply(chunk_id);
-    }
 
 
-    public static void processGetChunkEnhancement(String file_id, int chunk_no){
 
-        GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
-        Peer.node.respond(message);
-
-    }
 
     public static void receiveGetChunkEnhancement(GetChunkEnhancementMessage message) {
         Integer chunk_no = message.getChunkNo();

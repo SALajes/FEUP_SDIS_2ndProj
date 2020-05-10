@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ReclaimProtocol extends BasicProtocol{
 
+    // --- peer initiator
     public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number){
         openSocket();
         RemovedMessage removedMessage = new RemovedMessage( sender_id, file_id, chunk_number);
@@ -24,6 +25,7 @@ public class ReclaimProtocol extends BasicProtocol{
     }
 
 
+    // --- peer not initiator
     public static void receiveRemoved(RemovedMessage removedMessage ){
         String file_id = removedMessage.getFileId();
         Integer chunk_number = removedMessage.getChunkNo();
@@ -55,6 +57,8 @@ public class ReclaimProtocol extends BasicProtocol{
         }
     }
 
+
+    // -- start a sub protocol as a initiator
     public static void sendPutchunk(int sender_id, int replication_degree, String file_id, Chunk chunk) {
         //send put chunk
 
@@ -78,7 +82,6 @@ public class ReclaimProtocol extends BasicProtocol{
             return;
         }
 
-       // Peer.MDB.sendMessage(message);
         sendWithTCP(message);
 
         int try_aux = tries + 1;

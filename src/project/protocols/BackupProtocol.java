@@ -53,6 +53,8 @@ public class BackupProtocol extends BasicProtocol {
             }
 
         }
+        //end of the sub protocol call
+        closeSocket();
     }
 
     private static void sendCancelBackup(StoredMessage stored) {
