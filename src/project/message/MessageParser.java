@@ -143,8 +143,7 @@ public class MessageParser {
             case CONNECTIONRESPONSE:
                 return new ConnectionResponseMessage(
                         Integer.parseInt(message_header.get(1).trim()),
-                        message_header.get(2).trim(),
-                        Integer.parseInt(message_header.get(3).trim())
+                        Integer.parseInt(message_header.get(2).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");

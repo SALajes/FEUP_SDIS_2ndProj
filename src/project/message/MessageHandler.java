@@ -1,9 +1,6 @@
 package project.message;
 
-import project.protocols.BackupProtocol;
-import project.protocols.DeleteProtocol;
-import project.protocols.ReclaimProtocol;
-import project.protocols.RestoreProtocol;
+import project.protocols.*;
 
 public class MessageHandler {
     public static BaseMessage handleMessage(byte[] raw_message){
@@ -38,8 +35,9 @@ public class MessageHandler {
                     RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
                 case CONNECTIONREQUEST:
-                    //TODO parse conection request
-                    break;
+                    return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
+                case CONNECTIONRESPONSE:
+                    ConnectionProtocol.receiveResponse((ConnectionResponseMessage) message);
                 default:
                     break;
             }

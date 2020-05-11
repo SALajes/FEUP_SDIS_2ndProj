@@ -52,7 +52,7 @@ public class ChordNode {
     }
 
     private void connectToNetwork(String neighbour_address, int neighbour_port) {
-        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, neighbour_address, neighbour_port);
+        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.IP, this.port);
         makeRequest(request, neighbour_address, neighbour_port);
     }
 
@@ -79,9 +79,11 @@ public class ChordNode {
 
             //TODO Isto retorna sempre null e para de funcionar ao fazer response.convertMessage() porque a response é null
             BaseMessage response = MessageHandler.handleMessage(request);
+            System.out.println("RECEIVED REQUEST: " + new String(request));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(response.convertMessage());
+            System.out.println("SENT RESPONSE: " + new String(response.convertMessage()));
 
 
             socket.close();
@@ -94,6 +96,7 @@ public class ChordNode {
         try {
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
             socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
+            System.out.println("MADE REQUEST: " + new String(request.convertMessage()));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(request.convertMessage());
@@ -102,6 +105,7 @@ public class ChordNode {
             byte[] raw_response = (byte[]) objectInputStream.readObject();
 
             MessageHandler.handleMessage(raw_response);
+            System.out.println("RECEIVED RESPONSE: " + new String(raw_response));
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -120,13 +124,7 @@ public class ChordNode {
         else if(desired_key.compareTo(finger_table.get(0)) <= 0){
             return finger_table.get(0);
         }
-        else{
-            String successor = closestPrecedingNode(desired_key);
-            if(successor == null){
-                //not sure what to do porque supostamente a key nao existe neste caso
-            }
-            else return successor;
-        }
+        else return closestPrecedingNode(desired_key);
     }
 
     public String closestPrecedingNode(String desired_key){
