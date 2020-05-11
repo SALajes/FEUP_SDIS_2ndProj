@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -77,8 +76,7 @@ public class ChordNode {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             byte[] request = (byte[]) objectInputStream.readObject();
 
-            //TODO
-            //Isto retorna sempre null, para de funcionar ao fazer response.convertMessage() porque a response é null
+            //TODO Isto retorna sempre null e para de funcionar ao fazer response.convertMessage() porque a response é null
             BaseMessage response = MessageHandler.handleMessage(request);
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
