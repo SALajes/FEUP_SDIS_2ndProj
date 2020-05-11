@@ -68,6 +68,8 @@ public class Peer implements RemoteInterface {
 
             Peer object_peer;
 
+            setSslProperties();
+
             try{
                 if(args.length == 3){
                     object_peer = new Peer(port);
@@ -107,6 +109,13 @@ public class Peer implements RemoteInterface {
             System.err.println("Peer exception: " + e.toString());
             e.printStackTrace();
         }
+    }
+
+    public static void setSslProperties(){
+        System.setProperty("javax.net.ssl.keyStore", "server.keys");
+        System.setProperty("javax.net.ssl.keyStorePassword", "123456");
+        System.setProperty("javax.net.ssl.trustStore", "truststore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "123456");
     }
 
     public int backup(String file_path, int replication_degree) throws InvalidMessageException, InvalidFileException {

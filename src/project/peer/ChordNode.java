@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,9 +20,6 @@ public class ChordNode {
 
     private final String IP = InetAddress.getLocalHost().getHostAddress();
     private final int port;
-
-    private final String[] cipher_server = {"server.keys", "truststore"};
-    private final String[] cipher_client = {"client.keys", "truststore"};
 
     private UUID key = UUID.randomUUID();
 
@@ -48,6 +46,8 @@ public class ChordNode {
     private void initiateServerSockets() throws IOException {
         this.server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this.port);
+        //Sockets "created" by accept method inherit the cipher suite.
+        this.server_socket.setEnabledCipherSuites(this.server_socket.getSupportedCipherSuites());
         this.socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
@@ -73,15 +73,17 @@ public class ChordNode {
 
     private void receiveRequest(SSLSocket socket) {
         try {
-            socket.setEnabledCipherSuites(cipher_server);
 
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             byte[] request = (byte[]) objectInputStream.readObject();
 
+            //TODO
+            //Isto retorna sempre null, para de funcionar ao fazer response.convertMessage() porque a response é null
             BaseMessage response = MessageHandler.handleMessage(request);
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(response.convertMessage());
+
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -92,7 +94,7 @@ public class ChordNode {
     public void makeRequest(BaseMessage request, String address, Integer port){
         try {
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
-            socket.setEnabledCipherSuites(cipher_client);
+            socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(request.convertMessage());

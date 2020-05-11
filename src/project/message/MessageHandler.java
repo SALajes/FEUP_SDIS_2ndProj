@@ -37,6 +37,8 @@ public class MessageHandler {
                 case CHUNK:
                     RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
+                case CONNECTIONREQUEST:
+
                 default:
                     break;
             }
