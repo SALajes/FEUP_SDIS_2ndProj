@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,10 +21,10 @@ public class ChordNode {
     private final String IP = InetAddress.getLocalHost().getHostAddress();
     private final int port;
 
-    private UUID key = UUID.randomUUID();
+    private String key = UUID.randomUUID().toString();
 
     private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, Pair<String, Integer>> successors_info = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Pair<String, Integer>> successors_info = new ConcurrentHashMap<>();
 
     private SSLServerSocket server_socket = null;
     private SSLServerSocketFactory server_socket_factory = null;
@@ -112,7 +113,28 @@ public class ChordNode {
         return null;
     }
 
-    public String findSuccessor(String key){
+    public String findSuccessor(String desired_key){
+        if(this.key.equals(desired_key)) {
+            return this.key;
+        }
+        else if(desired_key.compareTo(finger_table.get(0)) <= 0){
+            return finger_table.get(0);
+        }
+        else{
+            String successor = closestPrecedingNode(desired_key);
+            if(successor == null){
+                //not sure what to do porque supostamente a key nao existe neste caso
+            }
+            else return successor;
+        }
+    }
+
+    public String closestPrecedingNode(String desired_key){
+        for(int n = finger_table.size(); n > 0; n--){
+            String key = finger_table.get(n);
+            if(key.compareTo(desired_key) <= 0)
+                return key;
+        }
         return null;
     }
 }
