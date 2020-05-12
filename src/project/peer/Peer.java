@@ -7,6 +7,7 @@ import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.*;
@@ -35,11 +36,11 @@ public class Peer implements RemoteInterface {
 
     public static ChordNode node;
 
-    public Peer(int port) throws IOException {
+    public Peer(int port) throws IOException, NoSuchAlgorithmException {
         node = new ChordNode(port);
     }
 
-    public Peer(int port, String neighbour_address, int neighbour_port) throws IOException {
+    public Peer(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
         node = new ChordNode(port, neighbour_address, neighbour_port);
     }
 

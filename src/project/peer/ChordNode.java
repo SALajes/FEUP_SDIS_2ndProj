@@ -1,8 +1,6 @@
 package project.peer;
 
-import org.w3c.dom.Node;
 import project.message.*;
-import project.Pair;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -17,20 +15,15 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class ChordNode {
     public static int number_of_peers;
 
-    private String IP;
-    private int port;
-
     private int m = 128;
-    private static BigInteger key;
 
-    private static NodeInfo node;
+    private static NodeInfo this_node;
 
     private static ConcurrentHashMap<Integer, BigInteger> finger_table = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<BigInteger, NodeInfo> successors_info = new ConcurrentHashMap<>();
@@ -41,52 +34,40 @@ public class ChordNode {
     private SSLServerSocketFactory server_socket_factory = null;
     private SSLSocketFactory socket_factory = null;
 
-    public ChordNode(int port) throws IOException {
+    public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
         number_of_peers = 1;
-        initiateInfo(port);
+        this_node = new NodeInfo(generateKey(), InetAddress.getLocalHost().getHostAddress(), port);
         initiateServerSockets();
         run();
     }
 
-    public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException {
+    public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
         number_of_peers = 0;
-        initiateInfo(port);
+        this_node = new NodeInfo(generateKey(), InetAddress.getLocalHost().getHostAddress(), port);
         initiateServerSockets();
         connectToNetwork(neighbour_address, neighbour_port);
         run();
     }
 
-    private void initiateInfo(int port) throws UnknownHostException {
-        this.IP = InetAddress.getLocalHost().getHostAddress();
-        this.port = port;
-        generateKey();
-        this.node = new NodeInfo(key, IP, port);
-    }
-
-    private void generateKey() {
-        String unique_id = IP + ":" + port;
+    private BigInteger generateKey() throws NoSuchAlgorithmException {
+        String unique_id = this_node.address + ":" + this_node.port;
         BigInteger maximum = new BigInteger("2").pow(m);
 
-        MessageDigest digest = null;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(unique_id.getBytes(StandardCharsets.UTF_8));
-            this.key = new BigInteger(1, hash).mod(maximum);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(unique_id.getBytes(StandardCharsets.UTF_8));
+        return new BigInteger(1, hash).mod(maximum);
     }
 
     private void initiateServerSockets() throws IOException {
         this.server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this.port);
+        this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this_node.port);
         //Sockets "created" by accept method inherit the cipher suite.
         this.server_socket.setEnabledCipherSuites(this.server_socket.getSupportedCipherSuites());
         this.socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
     private void connectToNetwork(String neighbour_address, int neighbour_port) {
-        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.key, this.IP, this.port);
+        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this_node.key, this_node.address, this_node.port);
         makeRequest(request, neighbour_address, neighbour_port);
     }
 
@@ -102,7 +83,7 @@ public class ChordNode {
                 Peer.scheduled_executor.execute(task);
 
             } catch (IOException ioException) {
-                System.out.println("Failed to accept on port " + port);
+                System.out.println("Failed to accept on port " + this_node.port);
                 ioException.printStackTrace();
             }
         }
@@ -165,28 +146,37 @@ public class ChordNode {
     }
 
     public static NodeInfo findSuccessor(BigInteger desired_key){
-        if(key.equals(desired_key)) {
-            return node;
+        if(this_node.key.equals(desired_key)) {
+            return this_node;
         }
-        else if(desired_key.compareTo(finger_table.get(0)) <= 0){
+        else if(isKeyBetween(desired_key, this_node.key, finger_table.get(0))){
             return successors_info.get(finger_table.get(0));
         }
         else return successors_info.get(closestPrecedingNode(desired_key));
     }
 
-    public static BigInteger closestPrecedingNode(BigInteger desired_key){
-        for(int n = finger_table.size(); n > 0; n--){
+    public static BigInteger closestPrecedingNode(BigInteger desired_key) {
+        for (int n = finger_table.size(); n > 0; n--) {
             BigInteger aux = finger_table.get(n);
-            if(aux.compareTo(desired_key) <= 0)
+            if (isKeyBetween(aux, this_node.key, desired_key))
                 return aux;
         }
         return null;
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
-        if(key.equals(successor)) {
-            return node;
+        if(this_node.key.equals(successor)) {
+            return this_node;
         }
         else return successors_info.get(closestPrecedingNode(successor));
+    }
+
+    //Returns true if key is between lowerBound and upperBound, taking into account chord nodes are in a circle (lowerBound can have a higher value than upperBound)
+    public static boolean isKeyBetween(BigInteger key, BigInteger lowerBound, BigInteger upperBound){
+        if(lowerBound.compareTo(upperBound) >= 0){
+            return (key.compareTo(lowerBound) > 0) || (key.compareTo(upperBound) <= 0);
+        }else{
+            return (key.compareTo(lowerBound) > 0) && (key.compareTo(upperBound) <= 0);
+        }
     }
 }
