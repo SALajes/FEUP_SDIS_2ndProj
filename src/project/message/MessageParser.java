@@ -2,6 +2,7 @@ package project.message;
 
 import project.Macros;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
@@ -137,13 +138,17 @@ public class MessageParser {
             case CONNECTIONREQUEST:
                 return new ConnectionRequestMessage(
                         Integer.parseInt(message_header.get(1).trim()),
-                        message_header.get(2).trim(),
-                        Integer.parseInt(message_header.get(3).trim())
+                        new BigInteger(message_header.get(2).trim()),
+                        message_header.get(3).trim(),
+                        Integer.parseInt(message_header.get(4).trim())
                 );
             case CONNECTIONRESPONSE:
                 return new ConnectionResponseMessage(
                         Integer.parseInt(message_header.get(1).trim()),
-                        Integer.parseInt(message_header.get(2).trim())
+                        Integer.parseInt(message_header.get(2).trim()),
+                        new BigInteger(message_header.get(3).trim()),
+                        message_header.get(4).trim(),
+                        Integer.parseInt(message_header.get(5).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");

@@ -1,5 +1,6 @@
 package project.peer;
 
+import org.w3c.dom.Node;
 import project.message.*;
 import project.Pair;
 
@@ -10,37 +11,70 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.InetAddress;
-import java.util.Iterator;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class ChordNode {
-    private int number_of_peers;
+    public static int number_of_peers;
 
-    private final String IP = InetAddress.getLocalHost().getHostAddress();
-    private final int port;
+    private String IP;
+    private int port;
 
-    private String key = UUID.randomUUID().toString();
+    private int m = 128;
+    private static BigInteger key;
 
-    private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Pair<String, Integer>> successors_info = new ConcurrentHashMap<>();
+    private static NodeInfo node;
+
+    private static ConcurrentHashMap<Integer, BigInteger> finger_table = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<BigInteger, NodeInfo> successors_info = new ConcurrentHashMap<>();
+
+    private static NodeInfo predecessor;
 
     private SSLServerSocket server_socket = null;
     private SSLServerSocketFactory server_socket_factory = null;
     private SSLSocketFactory socket_factory = null;
 
     public ChordNode(int port) throws IOException {
-        this.port = port;
+        number_of_peers = 1;
+        initiateInfo(port);
         initiateServerSockets();
         run();
     }
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException {
-        this.port = port;
+        number_of_peers = 0;
+        initiateInfo(port);
         initiateServerSockets();
         connectToNetwork(neighbour_address, neighbour_port);
         run();
+    }
+
+    private void initiateInfo(int port) throws UnknownHostException {
+        this.IP = InetAddress.getLocalHost().getHostAddress();
+        this.port = port;
+        generateKey();
+        this.node = new NodeInfo(key, IP, port);
+    }
+
+    private void generateKey() {
+        String unique_id = IP + ":" + port;
+        BigInteger maximum = new BigInteger("2").pow(m);
+
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(unique_id.getBytes(StandardCharsets.UTF_8));
+            this.key = new BigInteger(1, hash).mod(maximum);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initiateServerSockets() throws IOException {
@@ -52,11 +86,14 @@ public class ChordNode {
     }
 
     private void connectToNetwork(String neighbour_address, int neighbour_port) {
-        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.IP, this.port);
+        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.key, this.IP, this.port);
         makeRequest(request, neighbour_address, neighbour_port);
     }
 
     private void run() {
+        Runnable stabilize_task = ()-> stabilize();
+        Peer.scheduled_executor.schedule(stabilize_task, 60, TimeUnit.SECONDS);
+
         while(true){
             try{
                 SSLSocket socket = (SSLSocket) server_socket.accept();
@@ -71,20 +108,23 @@ public class ChordNode {
         }
     }
 
+    private void stabilize(){
+
+
+        Runnable task = ()-> stabilize();
+        Peer.scheduled_executor.schedule(task, 60, TimeUnit.SECONDS);
+    }
+
     private void receiveRequest(SSLSocket socket) {
         try {
 
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             byte[] request = (byte[]) objectInputStream.readObject();
 
-            //TODO Isto retorna sempre null e para de funcionar ao fazer response.convertMessage() porque a response é null
             BaseMessage response = MessageHandler.handleMessage(request);
-            System.out.println("RECEIVED REQUEST: " + new String(request));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(response.convertMessage());
-            System.out.println("SENT RESPONSE: " + new String(response.convertMessage()));
-
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -96,7 +136,6 @@ public class ChordNode {
         try {
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
             socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
-            System.out.println("MADE REQUEST: " + new String(request.convertMessage()));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(request.convertMessage());
@@ -105,7 +144,6 @@ public class ChordNode {
             byte[] raw_response = (byte[]) objectInputStream.readObject();
 
             MessageHandler.handleMessage(raw_response);
-            System.out.println("RECEIVED RESPONSE: " + new String(raw_response));
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -113,26 +151,42 @@ public class ChordNode {
         }
     }
 
-    private Pair<String, Integer> getDestinationNode() {
-        return null;
+    public static void incrementNumberOfPeers() {
+        number_of_peers++;
     }
 
-    public String findSuccessor(String desired_key){
-        if(this.key.equals(desired_key)) {
-            return this.key;
+    public static void setNumberOfPeers(int n) {
+        if(n > number_of_peers)
+            number_of_peers = n;
+    }
+
+    public static void setPredecessor(BigInteger key, String address, int port) {
+        predecessor = new NodeInfo(key, address, port);
+    }
+
+    public static NodeInfo findSuccessor(BigInteger desired_key){
+        if(key.equals(desired_key)) {
+            return node;
         }
         else if(desired_key.compareTo(finger_table.get(0)) <= 0){
-            return finger_table.get(0);
+            return successors_info.get(finger_table.get(0));
         }
-        else return closestPrecedingNode(desired_key);
+        else return successors_info.get(closestPrecedingNode(desired_key));
     }
 
-    public String closestPrecedingNode(String desired_key){
+    public static BigInteger closestPrecedingNode(BigInteger desired_key){
         for(int n = finger_table.size(); n > 0; n--){
-            String key = finger_table.get(n);
-            if(key.compareTo(desired_key) <= 0)
-                return key;
+            BigInteger aux = finger_table.get(n);
+            if(aux.compareTo(desired_key) <= 0)
+                return aux;
         }
         return null;
+    }
+
+    public static NodeInfo findPredecessor(BigInteger successor){
+        if(key.equals(successor)) {
+            return node;
+        }
+        else return successors_info.get(closestPrecedingNode(successor));
     }
 }
