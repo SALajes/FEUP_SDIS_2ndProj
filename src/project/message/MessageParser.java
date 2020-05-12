@@ -5,6 +5,7 @@ import project.Macros;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Arrays.copyOfRange;
 
@@ -93,7 +94,7 @@ public class MessageParser {
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
-            case GETCHUNKENHANCED:
+            case GETCHUNK_ENHANCED:
                 return new GetChunkEnhancementMessage(
                         Integer.parseInt(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim(), //file_id
@@ -115,7 +116,7 @@ public class MessageParser {
                         message_header.get(2).trim() //file_id
                         //message without a body
                 );
-            case DELETERECEIVED:
+            case DELETE_RECEIVED:
                 return new DeleteReceivedMessage(
                         Integer.parseInt(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim() //file_id
@@ -128,21 +129,21 @@ public class MessageParser {
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
-            case CANCELBACKUP:
+            case CANCEL_BACKUP:
                 return new CancelBackupMessage(
                         Integer.parseInt(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()), //chunk_no
                         Integer.parseInt(message_header.get(4).trim()) //receiver_id
                 );
-            case CONNECTIONREQUEST:
+            case CONNECTION_REQUEST:
                 return new ConnectionRequestMessage(
                         Integer.parseInt(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
                 );
-            case CONNECTIONRESPONSE:
+            case CONNECTION_RESPONSE:
                 return new ConnectionResponseMessage(
                         Integer.parseInt(message_header.get(1).trim()),
                         Integer.parseInt(message_header.get(2).trim()),

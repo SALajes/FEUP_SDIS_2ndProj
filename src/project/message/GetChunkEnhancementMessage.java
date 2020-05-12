@@ -8,7 +8,7 @@ public class GetChunkEnhancementMessage extends ProtocolMessage {
     private final String address;
 
     public GetChunkEnhancementMessage(int sender_id, String file_id, int chunk_no, int port, String address) {
-        super(Message_Type.GETCHUNKENHANCED, sender_id, file_id);
+        super(Message_Type.GETCHUNK_ENHANCED, sender_id, file_id);
 
         this.chunk_no = chunk_no;
         this.port = port;

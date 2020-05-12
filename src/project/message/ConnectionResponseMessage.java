@@ -9,7 +9,7 @@ public class ConnectionResponseMessage extends BaseMessage{
     private final int port;
 
     public ConnectionResponseMessage(int sender_id, int number_of_peers, BigInteger predecessor, String address, int port) {
-        super(Message_Type.CONNECTIONRESPONSE, sender_id);
+        super(Message_Type.CONNECTION_RESPONSE, sender_id);
         this.number_of_peers = number_of_peers;
         this.predecessor = predecessor;
         this.address = address;

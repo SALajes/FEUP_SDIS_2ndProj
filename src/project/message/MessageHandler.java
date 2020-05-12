@@ -14,12 +14,12 @@ public class MessageHandler {
                 case GETCHUNK:
                     RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                     break;
-                case GETCHUNKENHANCED:
+                case GETCHUNK_ENHANCED:
                     RestoreProtocol.receiveGetChunkEnhancement((GetChunkEnhancementMessage) message);
                 case DELETE:
                     DeleteProtocol.receiveDelete((DeleteMessage) message);
                     break;
-                case DELETERECEIVED:
+                case DELETE_RECEIVED:
                     DeleteProtocol.receiveDeleteReceived((DeleteReceivedMessage) message);
                     break;
                 case REMOVED:
@@ -28,16 +28,20 @@ public class MessageHandler {
                 case PUTCHUNK:
                     BackupProtocol.receivePutchunk((PutChunkMessage) message);
                     break;
-                case CANCELBACKUP:
+                case CANCEL_BACKUP:
                     BackupProtocol.receiveCancelBackup((CancelBackupMessage) message);
                     break;
                 case CHUNK:
                     RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
-                case CONNECTIONREQUEST:
+                case CONNECTION_REQUEST:
                     return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
-                case CONNECTIONRESPONSE:
-                    ConnectionProtocol.receiveResponse((ConnectionResponseMessage) message);
+                case CONNECTION_RESPONSE:
+                    return message;
+                case REQUEST_PREDECESSOR:
+                    return ConnectionProtocol.receiveRequestPredecessor((RequestPredecessorMessage) message);
+                case PREDECESSOR_RESPONSE:
+                    return message;
                 default:
                     break;
             }

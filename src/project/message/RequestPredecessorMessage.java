@@ -2,12 +2,12 @@ package project.message;
 
 import java.math.BigInteger;
 
-public class ConnectionRequestMessage extends BaseMessage {
+public class RequestPredecessorMessage extends BaseMessage{
     private final BigInteger key;
     private final String address;
     private final int port;
 
-    public ConnectionRequestMessage(int sender_id, BigInteger key, String address, int port) {
+    public RequestPredecessorMessage(int sender_id, BigInteger key, String address, int port) {
         super(Message_Type.CONNECTION_REQUEST, sender_id);
         this.address = address;
         this.port = port;
