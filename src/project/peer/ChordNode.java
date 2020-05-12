@@ -1,7 +1,6 @@
 package project.peer;
 
 import project.message.*;
-import project.Pair;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -10,34 +9,29 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.util.Iterator;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChordNode {
     private int number_of_peers;
 
-    private final String IP = InetAddress.getLocalHost().getHostAddress();
-    private final int port;
+    public static int m = 128;
 
-    private String key = UUID.randomUUID().toString();
+    private final ChordNodeInfo nodeInfo;
 
-    private ConcurrentHashMap<Integer, String> finger_table = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Pair<String, Integer>> successors_info = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, ChordNodeInfo> finger_table = new ConcurrentHashMap<>();
 
     private SSLServerSocket server_socket = null;
     private SSLServerSocketFactory server_socket_factory = null;
     private SSLSocketFactory socket_factory = null;
 
     public ChordNode(int port) throws IOException {
-        this.port = port;
+        this.nodeInfo = new ChordNodeInfo(port);
         initiateServerSockets();
         run();
     }
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException {
-        this.port = port;
+        this.nodeInfo = new ChordNodeInfo(port);
         initiateServerSockets();
         connectToNetwork(neighbour_address, neighbour_port);
         run();
@@ -45,14 +39,14 @@ public class ChordNode {
 
     private void initiateServerSockets() throws IOException {
         this.server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this.port);
+        this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this.nodeInfo.getPort());
         //Sockets "created" by accept method inherit the cipher suite.
         this.server_socket.setEnabledCipherSuites(this.server_socket.getSupportedCipherSuites());
         this.socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
     private void connectToNetwork(String neighbour_address, int neighbour_port) {
-        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.IP, this.port);
+        ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, this.nodeInfo.getIP(), this.nodeInfo.getPort());
         makeRequest(request, neighbour_address, neighbour_port);
     }
 
@@ -65,7 +59,7 @@ public class ChordNode {
                 Peer.scheduled_executor.execute(task);
 
             } catch (IOException ioException) {
-                System.out.println("Failed to accept on port " + port);
+                System.out.println("Failed to accept on port " + this.nodeInfo.getPort());
                 ioException.printStackTrace();
             }
         }
@@ -113,26 +107,37 @@ public class ChordNode {
         }
     }
 
-    private Pair<String, Integer> getDestinationNode() {
-        return null;
-    }
-
-    public String findSuccessor(String desired_key){
-        if(this.key.equals(desired_key)) {
-            return this.key;
+    public ChordNodeInfo findSuccessor(String desired_key){
+        if(this.nodeInfo.getKey().equals(desired_key)) {
+            return this.nodeInfo;
         }
-        else if(desired_key.compareTo(finger_table.get(0)) <= 0){
+        else if(isKeyBetween(desired_key, this.nodeInfo.getKey(), finger_table.get(0).getKey())){
             return finger_table.get(0);
         }
         else return closestPrecedingNode(desired_key);
+        /*
+        ChordNodeInfo precedingFinger = closestPrecedingNode(desired_key);
+
+        //send message to preceding finger to find successor of desired_key (?)
+        */
     }
 
-    public String closestPrecedingNode(String desired_key){
-        for(int n = finger_table.size(); n > 0; n--){
-            String key = finger_table.get(n);
-            if(key.compareTo(desired_key) <= 0)
-                return key;
+    public ChordNodeInfo closestPrecedingNode(String desired_key){
+        for(int n = finger_table.size()-1; n > 0; n--){
+            ChordNodeInfo node = finger_table.get(n);
+            if(node != null && isKeyBetween(node.getKey(), this.nodeInfo.getKey(), desired_key))
+                return node;
         }
         return null;
     }
+
+    //Returns true if key is between lowerBound and upperBound, taking into account chord nodes are in a circle (lowerBound can have a higher value than upperBound)
+    public boolean isKeyBetween(String key, String lowerBound, String upperBound){
+        if(lowerBound.compareTo(upperBound) >= 0){
+            return (key.compareTo(lowerBound) > 0) || (key.compareTo(upperBound) <= 0);
+        }else{
+            return (key.compareTo(lowerBound) > 0) && (key.compareTo(upperBound) <= 0);
+        }
+    }
+
 }
