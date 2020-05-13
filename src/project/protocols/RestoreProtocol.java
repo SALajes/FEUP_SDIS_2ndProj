@@ -11,10 +11,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.*;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
-import static project.peer.ChordNode.makeRequest;
 
 public class RestoreProtocol {
 
@@ -35,7 +31,6 @@ public class RestoreProtocol {
 
     }
 
-
     public static void receiveChunk(ChunkMessage chunkMessage){
         String file_id = chunkMessage.getFileId();
         String file_name = FilesListing.getInstance().getFileName(file_id);
@@ -48,7 +43,6 @@ public class RestoreProtocol {
 
         Store.getInstance().checkGetchunkReply(chunk_id);
 
-
     }
 
 
@@ -58,37 +52,33 @@ public class RestoreProtocol {
      * a peer that has a copy of the specified chunk shall send it in the body of a CHUNK message via the MDR channel
      * @param  getChunkMessage message received
      */
-    public static void receiveGetChunk(GetChunkMessage getChunkMessage ){
+    public static ChunkMessage receiveGetChunk(GetChunkMessage getChunkMessage ){
         String file_id = getChunkMessage.getFileId();
 
         Integer chunk_number = getChunkMessage.getChunkNo();
         Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
 
         if (chunk == null)
-            return;
+            return null;
 
-        sendChunk(Peer.id, file_id, chunk_number, chunk.content);
+        return sendChunk(Peer.id, file_id, chunk_number, chunk.content);
     }
 
-
-
-    public static void sendChunk(Integer sender_id, String file_id, Integer chunk_no, byte[] chunk_data){
+    public static ChunkMessage sendChunk(Integer sender_id, String file_id, Integer chunk_no, byte[] chunk_data){
         ChunkMessage chunkMessage = new ChunkMessage(sender_id, file_id, chunk_no, chunk_data);
 
         String chunk_id = chunkMessage.getFileId() + "_" + chunkMessage.getChunkNo();
         Store.getInstance().addGetchunkReply(chunk_id);
 
-        Runnable task = () -> processChunk(chunkMessage, chunk_id);
-        Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
+        return processChunk(chunkMessage, chunk_id);
     }
 
-    public static void processChunk(ChunkMessage chunkMessage, String chunk_id){
+    public static ChunkMessage processChunk(ChunkMessage chunkMessage, String chunk_id){
         if(!Store.getInstance().getGetchunkReply(chunk_id))
-          //  Peer.MDR.sendMessage(chunkMessage.convertMessage());
+            return chunkMessage;
         Store.getInstance().removeGetchunkReply(chunk_id);
+        return null;
     }
-
-
 
 
     //--------------------- ENHANCED VERSION ------------------

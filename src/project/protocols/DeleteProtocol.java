@@ -66,7 +66,6 @@ public class DeleteProtocol {
             Store.getInstance().removeBackupChunkOccurrence(chunk_id, peer_id);
 
         }
-
         System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSenderId());
 
     }
@@ -74,23 +73,16 @@ public class DeleteProtocol {
 
     // ------------------------- peer not initiator --------------------
 
-    public static void receiveDelete(DeleteMessage deleteMessage){
+    public static DeleteReceivedMessage receiveDelete(DeleteMessage deleteMessage){
         String file_id = deleteMessage.getFileId();
 
         //delete all files and records in stored
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
         Store.getInstance().removeStoredChunks(file_id);
 
-        sendDeleteReceived(Peer.id, file_id);
-    }
-
-
-    public static DeleteReceivedMessage sendDeleteReceived(int sender_id, String file_id){
-
-        DeleteReceivedMessage message = new DeleteReceivedMessage(sender_id, file_id);
+        DeleteReceivedMessage message = new DeleteReceivedMessage(Peer.id, file_id);
         return message;
     }
-
 
 
 }

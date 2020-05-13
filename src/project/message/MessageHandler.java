@@ -5,6 +5,8 @@ import project.protocols.DeleteProtocol;
 import project.protocols.ReclaimProtocol;
 import project.protocols.RestoreProtocol;
 
+import static project.protocols.DeleteProtocol.receiveDeleteReceived;
+
 public class MessageHandler {
     public static BaseMessage handleMessage(byte[] raw_message){
         try {
@@ -12,13 +14,13 @@ public class MessageHandler {
 
             switch (message.getMessageType()) {
                 case STORED:
+                    //response to Putchunk
                     return BackupProtocol.receiveStored((StoredMessage) message);
                 case GETCHUNK:
                     RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                     break;
                 case DELETE:
-                    DeleteProtocol.receiveDelete((DeleteMessage) message);
-                    break;
+                    return DeleteProtocol.receiveDelete((DeleteMessage) message);
                 case DELETERECEIVED:
                     DeleteProtocol.receiveDeleteReceived((DeleteReceivedMessage) message);
                     break;
@@ -32,6 +34,7 @@ public class MessageHandler {
                     BackupProtocol.receiveCancelBackup((CancelBackupMessage) message);
                     break;
                 case CHUNK:
+                    //response to getchunk
                     RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
                 case CONNECTIONREQUEST:

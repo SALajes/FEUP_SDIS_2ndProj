@@ -1,6 +1,7 @@
 package project.protocols;
 
 import project.chunk.Chunk;
+import project.message.BaseMessage;
 import project.message.CancelBackupMessage;
 import project.message.PutChunkMessage;
 import project.message.StoredMessage;
@@ -26,9 +27,28 @@ public class BackupProtocol  {
 
             Store.getInstance().newBackupChunk(chunk_id, replication_degree);
 
-            Runnable task = () -> processPutchunk(putchunk.convertMessage(), putchunk.getReplicationDegree(), chunk_id, 0);
+            Runnable task = () -> processPutchunk(putchunk, putchunk.getReplicationDegree(), chunk_id, 0);
             Peer.scheduled_executor.execute(task);
         }
+    }
+
+    public static void processPutchunk(PutChunkMessage message, int replication_degree, String chunk_id, int tries) {
+        if(tries >= 5){
+            System.out.println("Putchunk failed desired replication degree: " + chunk_id);
+            return;
+        }
+
+        if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) >= replication_degree) {
+            System.out.println("Backed up " + chunk_id + " with desired replication_degree");
+            return;
+        }
+
+        //makeRequest(message, String address, Integer port)
+
+        int try_aux = tries+1;
+        long time = (long) Math.pow(2, try_aux-1);
+        Runnable task = () -> processPutchunk(message, replication_degree, chunk_id, try_aux);
+        Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
     }
 
     public static CancelBackupMessage receiveStored(StoredMessage stored){
@@ -56,24 +76,7 @@ public class BackupProtocol  {
 
     // ---------------------- Responses to Peer initiator -----------------------------------------
 
-    private static void processPutchunk(byte[] message, int replication_degree, String chunk_id, int tries) {
-        if(tries >= 5){
-            System.out.println("Putchunk failed desired replication degree: " + chunk_id);
-            return;
-        }
 
-        if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) >= replication_degree) {
-            System.out.println("Backed up " + chunk_id + " with desired replication_degree");
-            return;
-        }
-
-        //makeRequest(message, String address, Integer port)
-
-        int try_aux = tries+1;
-        long time = (long) Math.pow(2, try_aux-1);
-        Runnable task = () -> processPutchunk(message, replication_degree, chunk_id, try_aux);
-        Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
-    }
 
     public static void receivePutchunk(PutChunkMessage putchunk){
 
@@ -85,21 +88,32 @@ public class BackupProtocol  {
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
-            Runnable task = ()-> sendStoredEnhanced(putchunk);
+            Runnable task = ()-> sendStored(putchunk);
             Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
         }
     }
 
 
-    private static void sendStoredEnhanced(PutChunkMessage putchunk) {
-        String chunk_id = putchunk.getFileId() + "_" + putchunk.getChunkNo();
+    private static StoredMessage sendStored(PutChunkMessage putchunk) {
+        int chunkNo = putchunk.getChunkNo();
+        String fileId = putchunk.getFileId();
+        String chunk_id = fileId + "_" + chunkNo ;
+
         if(Store.getInstance().checkAuxStoredOccurrences(chunk_id) < putchunk.getReplicationDegree()){
-            FileManager.storeChunk(putchunk.getFileId(), putchunk.getChunkNo(), putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-            StoredMessage stored = new StoredMessage(Peer.id, putchunk.getFileId(), putchunk.getChunkNo());
-            //Peer.MC.sendMessage(message); - sendStored
-           // Peer.node.respond(stored);
+            FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
+            //Runnable task = () -> processStore(fileId, chunkNo);
+           // new Thread(task).start();
+            return processStore(fileId, chunkNo);
+
         }
         Store.getInstance().removeAuxStoredOccurrences(chunk_id);
+
+        return null;
+    }
+
+    public static StoredMessage processStore(String fileId, int chunkNo) {
+        StoredMessage stored = new StoredMessage(Peer.id, fileId,  chunkNo);
+        return stored;
     }
 
     public static void receiveCancelBackup(CancelBackupMessage cancel_backup){
