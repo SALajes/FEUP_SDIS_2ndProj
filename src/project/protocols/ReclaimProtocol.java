@@ -10,7 +10,7 @@ import project.store.Store;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class ReclaimProtocol extends BasicProtocol {
+public class ReclaimProtocol  {
 
     // --------------------- peer initiator
     public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number){
@@ -20,8 +20,9 @@ public class ReclaimProtocol extends BasicProtocol {
 
     }
 
-    public static void processRemoveMessage(RemovedMessage removedMessage){
-        sendWithTCP(removedMessage);
+    public static void processRemoveMessage(RemovedMessage message){
+        //makeRequest(message, String address, Integer port);
+
     }
 
     // -------------- peer not initiator
@@ -81,7 +82,7 @@ public class ReclaimProtocol extends BasicProtocol {
             return;
         }
 
-        sendWithTCP(message);
+        //makeRequest(message, String address, Integer port)
 
         int try_aux = tries + 1;
         long time = (long) Math.pow(2, try_aux-1);

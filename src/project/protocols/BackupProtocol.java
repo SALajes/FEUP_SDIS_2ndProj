@@ -13,11 +13,10 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class BackupProtocol extends BasicProtocol {
+public class BackupProtocol  {
 
     //------------------------------- peer initiator  ---------------------------------------------------------------
     public static void sendPutchunk(int sender_id, int replication_degree, String file_id, ArrayList<Chunk> chunks) {
-         openSocket();
 
         //sends putchunks
         for (Chunk chunk : chunks) {
@@ -32,7 +31,7 @@ public class BackupProtocol extends BasicProtocol {
         }
     }
 
-    public static void receiveStored(StoredMessage stored){
+    public static CancelBackupMessage receiveStored(StoredMessage stored){
         String file_id = stored.getFileId();
         String chunk_id = file_id + "_" + stored.getChunkNo();
         int peer_id = stored.getSenderId();
@@ -40,8 +39,8 @@ public class BackupProtocol extends BasicProtocol {
         if(FilesListing.getInstance().getFileName(file_id) != null) {
             if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id)) {
                 //condition is true is the replication degree has been accomplished
-                Runnable task = ()-> sendCancelBackup(stored);
-                Peer.scheduled_executor.execute(task);
+                CancelBackupMessage message = new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
+                return message;
             }
         } else {
             if(!Store.getInstance().hasReplicationDegree(chunk_id)){
@@ -50,16 +49,10 @@ public class BackupProtocol extends BasicProtocol {
             }
         }
 
-        //end of the sub protocol call
-        closeSocket();
 
+        return null;
     }
 
-
-    private static void sendCancelBackup(StoredMessage stored) {
-        CancelBackupMessage message = new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
-        sendWithTCP(message);
-    }
 
     // ---------------------- Responses to Peer initiator -----------------------------------------
 
@@ -74,7 +67,7 @@ public class BackupProtocol extends BasicProtocol {
             return;
         }
 
-        //Peer.MDB.sendMessage(message);
+        //makeRequest(message, String address, Integer port)
 
         int try_aux = tries+1;
         long time = (long) Math.pow(2, try_aux-1);

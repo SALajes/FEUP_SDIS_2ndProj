@@ -27,7 +27,7 @@ public class ChordNode {
 
     private SSLServerSocket server_socket = null;
     private SSLServerSocketFactory server_socket_factory = null;
-    private SSLSocketFactory socket_factory = null;
+    private static SSLSocketFactory socket_factory = null;
 
     public ChordNode(int port) throws IOException {
         this.port = port;
@@ -89,7 +89,7 @@ public class ChordNode {
         }
     }
 
-    public void makeRequest(BaseMessage request, String address, Integer port){
+    public static void makeRequest(BaseMessage request, String address, Integer port){
         try {
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
             socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());

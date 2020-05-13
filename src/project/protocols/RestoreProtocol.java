@@ -14,12 +14,12 @@ import java.net.*;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class RestoreProtocol extends BasicProtocol {
+import static project.peer.ChordNode.makeRequest;
+
+public class RestoreProtocol {
 
     // --------- peer initiator
     public static void sendGetChunk(String file_id, int number_of_chunks){
-
-        openSocket();
 
         for (int i = 0; i < number_of_chunks; i++) {
             int chunk_no = i;
@@ -31,7 +31,7 @@ public class RestoreProtocol extends BasicProtocol {
     public static void processGetChunk(String file_id, int chunk_no){
 
         GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
-        sendWithTCP(message);
+        //makeRequest(message, String address, Integer port)
 
     }
 
@@ -48,8 +48,6 @@ public class RestoreProtocol extends BasicProtocol {
 
         Store.getInstance().checkGetchunkReply(chunk_id);
 
-        //end of the sub protocol call
-        closeSocket();
 
     }
 

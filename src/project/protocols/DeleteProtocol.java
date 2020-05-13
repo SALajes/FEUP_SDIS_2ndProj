@@ -1,6 +1,5 @@
 package project.protocols;
 
-import project.Macros;
 import project.message.*;
 import project.peer.Peer;
 import project.store.FileManager;
@@ -9,12 +8,10 @@ import project.store.Store;
 
 import java.util.concurrent.TimeUnit;
 
-public class DeleteProtocol extends BasicProtocol {
+public class DeleteProtocol {
 
     // --------------------   peer initiator
     public static void sendDelete(String file_id){
-
-        openSocket();
 
         DeleteMessage deleteMessage = new DeleteMessage(Peer.id, file_id);
         Runnable task = () -> processDelete(deleteMessage, file_id, 0);
@@ -46,7 +43,7 @@ public class DeleteProtocol extends BasicProtocol {
             return;
         }
 
-        sendWithTCP(message);
+        //makeRequest(message, String address, Integer port)
 
         int try_aux = tries + 1;
 
@@ -72,9 +69,6 @@ public class DeleteProtocol extends BasicProtocol {
 
         System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSenderId());
 
-        //end of the sub protocol call
-        closeSocket();
-
     }
 
 
@@ -91,16 +85,12 @@ public class DeleteProtocol extends BasicProtocol {
     }
 
 
-    public static void sendDeleteReceived(int sender_id, String file_id){
+    public static DeleteReceivedMessage sendDeleteReceived(int sender_id, String file_id){
 
         DeleteReceivedMessage message = new DeleteReceivedMessage(sender_id, file_id);
-        Runnable task = () -> processDeleteReceived(message);
-        Peer.scheduled_executor.execute(task);
+        return message;
     }
 
-    public static void processDeleteReceived(DeleteReceivedMessage message){
-       // Peer.MC.sendMessage(message.convertMessage());
-    }
 
 
 }
