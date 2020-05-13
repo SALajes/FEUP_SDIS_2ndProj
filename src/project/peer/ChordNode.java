@@ -15,7 +15,6 @@ import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -199,14 +198,17 @@ public class ChordNode {
         predecessor = new NodeInfo(key, address, port);
     }
 
-    public static NodeInfo findSuccessor(BigInteger desired_key){
-        if(this_node.key.equals(desired_key)) {
+    public static NodeInfo findSuccessor(BigInteger successor){
+        if(this_node.key.equals(successor)) {
             return this_node;
         }
-        else if(isKeyBetween(desired_key, this_node.key, finger_table.get(1))){
+        else if(isKeyBetween(successor, this_node.key, finger_table.get(1))){
             return successors_info.get(finger_table.get(1));
         }
-        else return successors_info.get(closestPrecedingNode(desired_key));
+        else {
+            NodeInfo node = successors_info.get(closestPrecedingNode(successor));
+            return ConnectionProtocol.findSuccessor(successor, node);
+        }
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
@@ -216,7 +218,10 @@ public class ChordNode {
         else if(isKeyBetween(finger_table.get(1), this_node.key, successor)){
             return successors_info.get(finger_table.get(1));
         }
-        else return successors_info.get(closestPrecedingNode(successor));
+        else {
+            NodeInfo node = successors_info.get(closestPrecedingNode(successor));
+            return ConnectionProtocol.findPredecessor(successor, node);
+        }
     }
 
     public static BigInteger closestPrecedingNode(BigInteger desired_key) {

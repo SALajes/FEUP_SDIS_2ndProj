@@ -36,11 +36,16 @@ public class MessageHandler {
                     break;
                 case CONNECTION_REQUEST:
                     return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
-                case CONNECTION_RESPONSE:
-                    return message;
                 case REQUEST_PREDECESSOR:
                     return ConnectionProtocol.receiveRequestPredecessor((RequestPredecessorMessage) message);
+                case FIND_PREDECESSOR:
+                    return ConnectionProtocol.receiveFindPredecessor((FindNodeMessage) message);
+                case FIND_SUCCESSOR:
+                    return ConnectionProtocol.receiveFindSuccessor((FindNodeMessage) message);
+                case CONNECTION_RESPONSE:
                 case PREDECESSOR_RESPONSE:
+                case PREDECESSOR:
+                case SUCCESSOR:
                     return message;
                 default:
                     break;

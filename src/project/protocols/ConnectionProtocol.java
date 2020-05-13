@@ -5,6 +5,8 @@ import project.peer.ChordNode;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 
+import java.math.BigInteger;
+
 public class ConnectionProtocol {
     public static void connectToNetwork(String neighbour_address, int neighbour_port) {
         ConnectionRequestMessage request = new ConnectionRequestMessage(Peer.id, ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
@@ -21,7 +23,6 @@ public class ConnectionProtocol {
 
     public static BaseMessage receiveRequest(ConnectionRequestMessage message) {
         NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
-        System.out.println("Finds predecessor");
         ChordNode.incrementNumberOfPeers();
         return new ConnectionResponseMessage(Peer.id, ChordNode.number_of_peers, predecessor.key, predecessor.address, predecessor.port);
     }
@@ -33,5 +34,25 @@ public class ConnectionProtocol {
         ChordNode.addSuccessor(successor);
 
         return response;
+    }
+
+    public static NodeInfo findSuccessor(BigInteger key, NodeInfo node) {
+        NodeMessage successor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.SUCCESSOR, Peer.id, key), node.address, node.port);
+        return new NodeInfo(successor.getKey(), successor.getAddress(), successor.getPort());
+    }
+
+    public static NodeInfo findPredecessor(BigInteger key, NodeInfo node) {
+        NodeMessage predecessor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.PREDECESSOR, Peer.id, key), node.address, node.port);
+        return new NodeInfo(predecessor.getKey(), predecessor.getAddress(), predecessor.getPort());
+    }
+
+    public static BaseMessage receiveFindPredecessor(FindNodeMessage message) {
+        NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
+        return new NodeMessage(Message_Type.PREDECESSOR, Peer.id, predecessor.key, predecessor.address, predecessor.port);
+    }
+
+    public static BaseMessage receiveFindSuccessor(FindNodeMessage message) {
+        NodeInfo successor = ChordNode.findPredecessor(message.getKey());
+        return new NodeMessage(Message_Type.SUCCESSOR, Peer.id, successor.key, successor.address, successor.port);
     }
 }

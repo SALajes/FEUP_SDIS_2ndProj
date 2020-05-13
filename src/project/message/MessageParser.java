@@ -163,6 +163,22 @@ public class MessageParser {
                         Integer.parseInt(message_header.get(1).trim()),
                         getMessageBody(message, message_length, first_CRLF_position)
                 );
+            case FIND_PREDECESSOR:
+            case FIND_SUCCESSOR:
+                return new FindNodeMessage(
+                        Message_Type.valueOf(message_header.get(0)),
+                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(2).trim())
+                );
+            case PREDECESSOR:
+            case SUCCESSOR:
+                return new NodeMessage(
+                        Message_Type.valueOf(message_header.get(0)),
+                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(2).trim()),
+                        message_header.get(3).trim(),
+                        Integer.parseInt(message_header.get(4).trim())
+                );
             default:
                 throw new InvalidMessageException("Received invalid message type");
 
