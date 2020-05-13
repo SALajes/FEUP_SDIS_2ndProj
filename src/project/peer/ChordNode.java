@@ -41,6 +41,8 @@ public class ChordNode {
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address, port), address, port);
         initiateServerSockets();
+        System.out.println("Peer " + Peer.id + " running in address " + this_node.address + " and port " + this_node.port +
+                "\n( key: " + this_node.key.toString() + " )");
         run();
     }
 
@@ -155,7 +157,7 @@ public class ChordNode {
         List<String> chunk_bites = Arrays.asList(chunk.split(" "));
 
         for(int i=0; i < chunk_bites.size(); i++){
-            List<String> node_info = Arrays.asList(chunk.split(":"));
+            List<String> node_info = Arrays.asList(chunk_bites.get(i).split(":"));
             BigInteger key = new BigInteger(node_info.get(0));
             finger_table.put(i, key);
             successors_info.put(key, new NodeInfo(key, node_info.get(1), Integer.parseInt(node_info.get(2))));
@@ -165,10 +167,13 @@ public class ChordNode {
     public static byte[] convertFingerTable() {
         String result = "";
 
-        for(int i = finger_table.size(); i > 0; i++){
-            NodeInfo node = successors_info.get(finger_table.get(i));
-            result = result + node.key + ":" + node.address + ":" + node.port + " ";
-        }
+        if(finger_table.size() == 0)
+            result = this_node.key + ":" + this_node.address + ":" + this_node.port + " ";
+        else
+            for(int i = finger_table.size(); i > 0; i++){
+                NodeInfo node = successors_info.get(finger_table.get(i));
+                result = result + node.key + ":" + node.address + ":" + node.port + " ";
+            }
 
         return result.getBytes();
     }
@@ -198,18 +203,18 @@ public class ChordNode {
         if(this_node.key.equals(desired_key)) {
             return this_node;
         }
-        else if(isKeyBetween(desired_key, this_node.key, finger_table.get(0))){
-            return successors_info.get(finger_table.get(0));
+        else if(isKeyBetween(desired_key, this_node.key, finger_table.get(1))){
+            return successors_info.get(finger_table.get(1));
         }
         else return successors_info.get(closestPrecedingNode(desired_key));
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
-        if(this_node.key.equals(successor)) {
+        if(this_node.key.equals(successor) || finger_table.size() == 0) {
             return this_node;
         }
-        else if(isKeyBetween(finger_table.get(0), this_node.key, successor)){
-            return successors_info.get(finger_table.get(0));
+        else if(isKeyBetween(finger_table.get(1), this_node.key, successor)){
+            return successors_info.get(finger_table.get(1));
         }
         else return successors_info.get(closestPrecedingNode(successor));
     }

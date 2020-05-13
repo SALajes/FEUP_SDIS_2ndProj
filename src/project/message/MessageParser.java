@@ -38,7 +38,7 @@ public class MessageParser {
     private static List<String> getMessageHeaderFields( String header) throws InvalidMessageException {
         List<String> header_fields = Arrays.asList(header.split(" "));
 
-        if (header_fields.size() < 3) {
+        if (header_fields.size() < 2) {
             throw new InvalidMessageException("Received invalid message header");
         }
         return header_fields;
@@ -150,6 +150,18 @@ public class MessageParser {
                         new BigInteger(message_header.get(3).trim()),
                         message_header.get(4).trim(),
                         Integer.parseInt(message_header.get(5).trim())
+                );
+            case REQUEST_PREDECESSOR:
+                return new RequestPredecessorMessage(
+                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(2).trim()),
+                        message_header.get(3).trim(),
+                        Integer.parseInt(message_header.get(4).trim())
+                );
+            case PREDECESSOR_RESPONSE:
+                return new PredecessorResponseMessage(
+                        Integer.parseInt(message_header.get(1).trim()),
+                        getMessageBody(message, message_length, first_CRLF_position)
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");
