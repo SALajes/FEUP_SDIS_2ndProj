@@ -4,8 +4,6 @@ public class Macros {
     public final static byte CR = 0xD;
     public final static byte LF = 0xA;
 
-    public static final Double VERSION = 1.0;
-
     public static final Integer TTL = 1;
 
     public static final Integer CHUNK_MAX_SIZE = 64000; //in bytes
@@ -15,4 +13,12 @@ public class Macros {
     public static final Integer MAX_MESSAGE_SIZE = 64200;
 
     public static final long INITIAL_STORAGE = 1000000000;
+
+    public static boolean checkPort(Integer port){
+        if( port <1024 || port>= 1 << 16){
+            System.err.println("\t <port_no> must be a 16 bit integer");
+            return false;
+        }
+        return true;
+    }
 }
