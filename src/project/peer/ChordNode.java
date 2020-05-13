@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
-import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -120,12 +119,14 @@ public class ChordNode {
         else if(desired_key.compareTo(finger_table.get(0)) <= 0){
             return finger_table.get(0);
         }
-        else{
+        else {
             String successor = closestPrecedingNode(desired_key);
-            if(successor == null){
+            //if successor is null return null;
+            return successor;
+         /*   if(successor == null){
                 //not sure what to do porque supostamente a key nao existe neste caso
             }
-            else return successor;
+            else return successor;*/
         }
     }
 

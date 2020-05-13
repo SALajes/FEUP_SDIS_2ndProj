@@ -1,6 +1,5 @@
 package project.protocols;
 
-import project.Macros;
 import project.chunk.Chunk;
 import project.message.CancelBackupMessage;
 import project.message.PutChunkMessage;
@@ -14,8 +13,12 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class BackupProtocol {
+public class BackupProtocol extends BasicProtocol {
+
+    //------------------------------- peer initiator  ---------------------------------------------------------------
     public static void sendPutchunk(int sender_id, int replication_degree, String file_id, ArrayList<Chunk> chunks) {
+         openSocket();
+
         //sends putchunks
         for (Chunk chunk : chunks) {
             PutChunkMessage putchunk = new PutChunkMessage(sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
@@ -28,6 +31,37 @@ public class BackupProtocol {
             Peer.scheduled_executor.execute(task);
         }
     }
+
+    public static void receiveStored(StoredMessage stored){
+        String file_id = stored.getFileId();
+        String chunk_id = file_id + "_" + stored.getChunkNo();
+        int peer_id = stored.getSenderId();
+
+        if(FilesListing.getInstance().getFileName(file_id) != null) {
+            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id)) {
+                //condition is true is the replication degree has been accomplished
+                Runnable task = ()-> sendCancelBackup(stored);
+                Peer.scheduled_executor.execute(task);
+            }
+        } else {
+            if(!Store.getInstance().hasReplicationDegree(chunk_id)){
+                //adds to the replication degree of the stored file
+                Store.getInstance().addReplicationDegree(chunk_id, peer_id);
+            }
+        }
+
+        //end of the sub protocol call
+        closeSocket();
+
+    }
+
+
+    private static void sendCancelBackup(StoredMessage stored) {
+        CancelBackupMessage message = new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
+        sendWithTCP(message);
+    }
+
+    // ---------------------- Responses to Peer initiator -----------------------------------------
 
     private static void processPutchunk(byte[] message, int replication_degree, String chunk_id, int tries) {
         if(tries >= 5){
@@ -63,42 +97,16 @@ public class BackupProtocol {
         }
     }
 
-    private static void sendStored(byte[] message){
-        //Peer.MC.sendMessage(message);
-    }
 
     private static void sendStoredEnhanced(PutChunkMessage putchunk) {
         String chunk_id = putchunk.getFileId() + "_" + putchunk.getChunkNo();
         if(Store.getInstance().checkAuxStoredOccurrences(chunk_id) < putchunk.getReplicationDegree()){
             FileManager.storeChunk(putchunk.getFileId(), putchunk.getChunkNo(), putchunk.getChunk(), putchunk.getReplicationDegree(), false);
             StoredMessage stored = new StoredMessage(Peer.id, putchunk.getFileId(), putchunk.getChunkNo());
-            sendStored(stored.convertMessage());
+            //Peer.MC.sendMessage(message); - sendStored
+           // Peer.node.respond(stored);
         }
         Store.getInstance().removeAuxStoredOccurrences(chunk_id);
-    }
-
-    public static void receiveStored(StoredMessage stored){
-        String file_id = stored.getFileId();
-        String chunk_id = file_id + "_" + stored.getChunkNo();
-        int peer_id = stored.getSenderId();
-
-        if(FilesListing.getInstance().getFileName(file_id) != null) {
-            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id, true)) {
-                //condition is true is the replication degree has been accomplished
-                Runnable task = ()-> sendCancelBackup(stored);
-                Peer.scheduled_executor.execute(task);
-            }
-        } else {
-            if(!Store.getInstance().hasReplicationDegree(chunk_id)){
-                //adds to the replication degree of the stored file
-                Store.getInstance().addReplicationDegree(chunk_id, peer_id);
-            }
-        }
-    }
-
-    private static void sendCancelBackup(StoredMessage stored) {
-        CancelBackupMessage message = new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
-        //Peer.MDB.sendMessage(message.convertMessage());
     }
 
     public static void receiveCancelBackup(CancelBackupMessage cancel_backup){

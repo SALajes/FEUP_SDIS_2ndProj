@@ -15,6 +15,7 @@ import project.Macros;
 
 import project.chunk.ChunkFactory;
 import project.message.InvalidMessageException;
+import project.protocols.BackupProtocol;
 import project.protocols.DeleteProtocol;
 import project.protocols.RestoreProtocol;
 import project.store.FileManager;

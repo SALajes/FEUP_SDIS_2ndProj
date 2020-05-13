@@ -10,7 +10,9 @@ import project.store.Store;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class ReclaimProtocol {
+public class ReclaimProtocol extends BasicProtocol {
+
+    // --------------------- peer initiator
     public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number){
         RemovedMessage removedMessage = new RemovedMessage(sender_id, file_id, chunk_number);
         Runnable task = () -> processRemoveMessage(removedMessage);
@@ -19,9 +21,10 @@ public class ReclaimProtocol {
     }
 
     public static void processRemoveMessage(RemovedMessage removedMessage){
-        //Peer.MC.sendMessage(removedMessage.convertMessage());
+        sendWithTCP(removedMessage);
     }
 
+    // -------------- peer not initiator
 
     public static void receiveRemoved(RemovedMessage removedMessage ){
 
@@ -54,6 +57,7 @@ public class ReclaimProtocol {
         }
     }
 
+    // -- initiate another protocol
     public static void sendPutchunk(int sender_id, int replication_degree, String file_id, Chunk chunk) {
         //send put chunk
 
@@ -61,11 +65,11 @@ public class ReclaimProtocol {
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
 
-        processPutchunk(putchunk.convertMessage(), putchunk.getReplicationDegree(), chunk_id, 0);
+        processPutchunk(putchunk, putchunk.getReplicationDegree(), chunk_id, 0);
 
     }
 
-    private static void processPutchunk(byte[] message, int replication_degree, String chunk_id, int tries) {
+    private static void processPutchunk(PutChunkMessage message, int replication_degree, String chunk_id, int tries) {
 
         if(tries >= 5){
             System.out.println("Put chunk failed desired replication degree: " + chunk_id);
@@ -77,7 +81,7 @@ public class ReclaimProtocol {
             return;
         }
 
-       // Peer.MDB.sendMessage(message);
+        sendWithTCP(message);
 
         int try_aux = tries + 1;
         long time = (long) Math.pow(2, try_aux-1);
