@@ -11,8 +11,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.*;
-
-
 import project.InvalidFileException;
 import project.Macros;
 
@@ -25,6 +23,7 @@ import project.store.FileManager;
 import project.store.FilesListing;
 import project.Pair;
 import project.store.Store;
+
 
 public class Peer implements RemoteInterface {
     private static final int RegistryPort = 1099;
@@ -63,8 +62,7 @@ public class Peer implements RemoteInterface {
 
             int port = Integer.parseInt(args[2]);
 
-            if( port <1024 || port>= 1<<16){
-                System.out.println("\t <port> must be a 16 bit integer");
+            if( Macros.checkPort(port)){
                 return;
             }
 
