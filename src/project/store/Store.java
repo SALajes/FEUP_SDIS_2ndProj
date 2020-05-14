@@ -230,14 +230,19 @@ public class Store {
         }
     }
 
-    public void removeStoredChunks(String file_id){
+    public boolean removeStoredChunks(String file_id){
         ArrayList<Integer> chunk_nos = new ArrayList<>(stored_chunks.get(file_id).second);
+
+        if(chunk_nos.size() == 0) {
+            return false;
+        }
 
         for(Integer chunk_number : chunk_nos) {
             stored_chunks_occurrences.remove(file_id + "_" + chunk_number);
         }
 
         stored_chunks.remove(file_id);
+        return true;
     }
 
     //-------------------- Stored Chunks Occurrences ------------------

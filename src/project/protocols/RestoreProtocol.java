@@ -62,6 +62,7 @@ public class RestoreProtocol {
             return null;
 
         return sendChunk(Peer.id, file_id, chunk_number, chunk.content);
+        //doesn't need to send the message to anyone was only one peer needs to answer
     }
 
     public static ChunkMessage sendChunk(Integer sender_id, String file_id, Integer chunk_no, byte[] chunk_data){
@@ -91,7 +92,7 @@ public class RestoreProtocol {
             e.printStackTrace();
         }
 
-        Integer port = server_socket.getLocalPort();
+        int port = server_socket.getLocalPort();
 
         String address;
 
@@ -124,7 +125,6 @@ public class RestoreProtocol {
         } catch (SocketException e) {
             e.printStackTrace();
             System.err.println("No peer responded");
-            return;
         }
     }
 
@@ -149,7 +149,7 @@ public class RestoreProtocol {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(chunkMessage.convertMessage());
         } catch (IOException e) {
-            return;
+            e.printStackTrace();
         }
     }
 
@@ -166,13 +166,9 @@ public class RestoreProtocol {
             if(FileManager.writeChunkToRestoredFile(file_name, chunkMessage.getChunk(), chunkMessage.getChunkNo())){
                 socket.close();
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException | InvalidMessageException  e) {
             e.printStackTrace();
 
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InvalidMessageException e) {
-            e.printStackTrace();
         }
 
     }

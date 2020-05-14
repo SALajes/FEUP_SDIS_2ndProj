@@ -68,6 +68,7 @@ public class DeleteProtocol {
         }
         System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSenderId());
 
+
     }
 
 
@@ -78,10 +79,15 @@ public class DeleteProtocol {
 
         //delete all files and records in stored
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
-        Store.getInstance().removeStoredChunks(file_id);
 
-        DeleteReceivedMessage message = new DeleteReceivedMessage(Peer.id, file_id);
-        return message;
+        if (Store.getInstance().removeStoredChunks(file_id)) {
+            //Sends to other peers the delete message
+            Runnable task = () -> processDelete(deleteMessage, file_id, 0);
+            Peer.scheduled_executor.execute(task);
+        }
+
+        return new DeleteReceivedMessage(Peer.id, file_id);
+
     }
 
 

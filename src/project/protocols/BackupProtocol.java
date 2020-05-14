@@ -59,8 +59,7 @@ public class BackupProtocol  {
         if(FilesListing.getInstance().getFileName(file_id) != null) {
             if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id)) {
                 //condition is true is the replication degree has been accomplished
-                CancelBackupMessage message = new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
-                return message;
+                return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
             }
         } else {
             if(!Store.getInstance().hasReplicationDegree(chunk_id)){
@@ -91,6 +90,16 @@ public class BackupProtocol  {
             Runnable task = ()-> sendStored(putchunk);
             Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
         }
+
+        if(putchunk.getReplicationDegree() > 0 ) {
+            //each peer only send
+
+            String chunk_id = file_id + "_" + putchunk.getChunkNo();
+
+            Runnable task = () -> processPutchunk(putchunk, putchunk.getReplicationDegree() - 1, chunk_id, 0);
+            Peer.scheduled_executor.execute(task);
+        }
+
     }
 
 
@@ -112,8 +121,7 @@ public class BackupProtocol  {
     }
 
     public static StoredMessage processStore(String fileId, int chunkNo) {
-        StoredMessage stored = new StoredMessage(Peer.id, fileId,  chunkNo);
-        return stored;
+        return new StoredMessage(Peer.id, fileId,  chunkNo);
     }
 
     public static void receiveCancelBackup(CancelBackupMessage cancel_backup){
