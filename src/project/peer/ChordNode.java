@@ -29,8 +29,7 @@ public class ChordNode {
     public static NodeInfo this_node;
     public static NodeInfo predecessor;
 
-    private static ConcurrentHashMap<Integer, BigInteger> finger_table = new ConcurrentHashMap<>();
-    private static ConcurrentHashMap<BigInteger, NodeInfo> successors_info = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Integer, NodeInfo> finger_table = new ConcurrentHashMap<>();
 
     private static SSLServerSocket server_socket = null;
     private static SSLServerSocketFactory server_socket_factory = null;
@@ -43,9 +42,10 @@ public class ChordNode {
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address, port), address, port);
         initiateServerSockets();
-        System.out.println("Peer " + Peer.id + " running in address " + this_node.address + " and port " + this_node.port +
-                "\n( key: " + this_node.key.toString() + " )");
-        run();
+        printStart();
+
+        Runnable run = ()-> run();
+        Peer.scheduled_executor.schedule(run, 400, TimeUnit.MILLISECONDS);
     }
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
@@ -53,10 +53,16 @@ public class ChordNode {
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address, port), address, port);
         initiateServerSockets();
+        ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
+        printStart();
+
+        Runnable run = ()-> run();
+        Peer.scheduled_executor.schedule(run, 400, TimeUnit.MILLISECONDS);
+    }
+
+    private void printStart() {
         System.out.println("Peer " + Peer.id + " running in address " + this_node.address + " and port " + this_node.port +
                 "\n( key: " + this_node.key.toString() + " )");
-        ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
-        run();
     }
 
     private BigInteger generateKey(String address, int port) throws NoSuchAlgorithmException {
@@ -99,7 +105,7 @@ public class ChordNode {
 
     private void updateFingerTable() {
         if(number_of_peers > 1){
-            int num_entries = (int) Math.sqrt(number_of_peers);
+            int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
 System.out.println("_______________________________________________________________");
             System.out.println("Num peers: " + number_of_peers);
             System.out.println(finger_table.toString());
@@ -171,9 +177,7 @@ System.out.println("____________________________________________________________
 
         for(int i=0; i < chunk_bites.size(); i++){
             List<String> node_info = Arrays.asList(chunk_bites.get(i).split(":"));
-            BigInteger key = new BigInteger(node_info.get(0));
-            finger_table.put(i, key);
-            successors_info.put(key, new NodeInfo(key, node_info.get(1), Integer.parseInt(node_info.get(2))));
+            finger_table.put(i+1, new NodeInfo(new BigInteger(node_info.get(0)), node_info.get(1), Integer.parseInt(node_info.get(2))));
         }
     }
 
@@ -184,8 +188,8 @@ System.out.println("____________________________________________________________
             result = new StringBuilder(this_node.key + ":" + this_node.address + ":" + this_node.port + " ");
         }
         else{
-            for(int i = finger_table.size()-1; i >= 0; i--){
-                NodeInfo node = successors_info.get(finger_table.get(i));
+            for(int i = finger_table.size(); i >= 1; i--){
+                NodeInfo node = finger_table.get(i);
                 result.append(node.key).append(":").append(node.address).append(":").append(node.port).append(" ");
             }
         }
@@ -194,11 +198,8 @@ System.out.println("____________________________________________________________
     }
 
     public static void addSuccessor(NodeInfo successor) {
-        finger_table.remove(0);
-        successors_info.remove(successor.key);
-
-        finger_table.put(0, successor.key);
-        successors_info.put(successor.key, successor);
+        finger_table.remove(1);
+        finger_table.put(1, successor);
     }
 
     public static void incrementNumberOfPeers() {
@@ -218,35 +219,28 @@ System.out.println("____________________________________________________________
         if(this_node.key.equals(successor)) {
             return this_node;
         }
-        else if(isKeyBetween(successor, this_node.key, finger_table.get(0))){
-            return successors_info.get(finger_table.get(0));
+        else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
+            return finger_table.get(1);
         }
-        else {
-            NodeInfo node = successors_info.get(closestPrecedingNode(successor));
-            return ConnectionProtocol.findSuccessor(successor, node);
-        }
+        else return ConnectionProtocol.findSuccessor(successor, closestPrecedingNode(successor));
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
         if(this_node.key.equals(successor) || finger_table.size() == 0) {
             return this_node;
         }
-        else if(isKeyBetween(finger_table.get(0), this_node.key, successor)){
-            return successors_info.get(finger_table.get(0));
+        else if(isKeyBetween(finger_table.get(1).key, this_node.key, successor)){
+            return finger_table.get(1);
         }
-        else {
-            NodeInfo node = successors_info.get(closestPrecedingNode(successor));
-            return ConnectionProtocol.findPredecessor(successor, node);
-        }
+        else return ConnectionProtocol.findPredecessor(successor, closestPrecedingNode(successor));
     }
 
-    public static BigInteger closestPrecedingNode(BigInteger desired_key) {
-        for (int n = finger_table.size()-1; n > 0; n--) {
-            BigInteger aux = finger_table.get(n);
-            if (isKeyBetween(aux, this_node.key, desired_key))
-                return aux;
+    public static NodeInfo closestPrecedingNode(BigInteger key) {
+        for (int n = finger_table.size(); n > 1; n--) {
+            if (isKeyBetween(finger_table.get(n).key, this_node.key, key))
+                return finger_table.get(n);
         }
-        return finger_table.get(0);
+        return finger_table.get(1);
     }
 
     //Returns true if key is between lowerBound and upperBound, taking into account chord nodes are in a circle (lowerBound can have a higher value than upperBound)
