@@ -6,7 +6,6 @@ public class MessageHandler {
     public static BaseMessage handleMessage(byte[] raw_message){
         try {
             BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
-
             switch (message.getMessageType()) {
                 case STORED:
                     BackupProtocol.receiveStored((StoredMessage) message);
@@ -38,14 +37,15 @@ public class MessageHandler {
                     return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
                 case REQUEST_PREDECESSOR:
                     return ConnectionProtocol.receiveRequestPredecessor((RequestPredecessorMessage) message);
+                case PREDECESSOR:
                 case FIND_PREDECESSOR:
                     return ConnectionProtocol.receiveFindPredecessor((FindNodeMessage) message);
+                case SUCCESSOR:
                 case FIND_SUCCESSOR:
                     return ConnectionProtocol.receiveFindSuccessor((FindNodeMessage) message);
+
                 case CONNECTION_RESPONSE:
                 case PREDECESSOR_RESPONSE:
-                case PREDECESSOR:
-                case SUCCESSOR:
                     return message;
                 default:
                     break;

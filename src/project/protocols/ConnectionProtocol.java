@@ -18,11 +18,16 @@ public class ConnectionProtocol {
         RequestPredecessorMessage contact_predecessor = new RequestPredecessorMessage(Peer.id, ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
         PredecessorResponseMessage predecessor_response = (PredecessorResponseMessage) ChordNode.makeRequest(contact_predecessor, ChordNode.predecessor.address, ChordNode.predecessor.port);
 
-        ChordNode.setFingerTable(new String(predecessor_response.getChunk()).trim());
+        if(predecessor_response.getChunk().length != 0){
+            ChordNode.setFingerTable(new String(predecessor_response.getChunk()).trim());
+        }
     }
 
     public static BaseMessage receiveRequest(ConnectionRequestMessage message) {
         NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
+        if(ChordNode.number_of_peers == 1){
+            ChordNode.predecessor = new NodeInfo(message.getKey(), message.getAddress(), message.getPort());
+        }
         ChordNode.incrementNumberOfPeers();
         return new ConnectionResponseMessage(Peer.id, ChordNode.number_of_peers, predecessor.key, predecessor.address, predecessor.port);
     }
@@ -43,6 +48,7 @@ public class ConnectionProtocol {
 
     public static NodeInfo findPredecessor(BigInteger key, NodeInfo node) {
         NodeMessage predecessor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.PREDECESSOR, Peer.id, key), node.address, node.port);
+        System.out.println(predecessor.getKey() + " " + predecessor.getAddress() + " " + predecessor.getPort());
         return new NodeInfo(predecessor.getKey(), predecessor.getAddress(), predecessor.getPort());
     }
 

@@ -18,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class ChordNode {
@@ -35,6 +36,8 @@ public class ChordNode {
     private static SSLServerSocketFactory server_socket_factory = null;
     private static SSLSocketFactory socket_factory = null;
 
+    public static ScheduledThreadPoolExecutor chord_executor = new ScheduledThreadPoolExecutor(4);
+
     public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
         number_of_peers = 1;
         String address = InetAddress.getLocalHost().getHostAddress();
@@ -50,6 +53,8 @@ public class ChordNode {
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address, port), address, port);
         initiateServerSockets();
+        System.out.println("Peer " + Peer.id + " running in address " + this_node.address + " and port " + this_node.port +
+                "\n( key: " + this_node.key.toString() + " )");
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
         run();
     }
@@ -72,7 +77,7 @@ public class ChordNode {
 
     private void run() {
         Runnable stabilize_task = ()-> stabilize();
-        Peer.scheduled_executor.schedule(stabilize_task, 60, TimeUnit.SECONDS);
+        ChordNode.chord_executor.scheduleAtFixedRate(stabilize_task, 1, 10, TimeUnit.SECONDS);
 
         while(true){
             try{
@@ -90,18 +95,23 @@ public class ChordNode {
 
     private void stabilize(){
         updateFingerTable();
-
-        Runnable task = ()-> stabilize();
-        Peer.scheduled_executor.schedule(task, 60, TimeUnit.SECONDS);
     }
 
     private void updateFingerTable() {
         if(number_of_peers > 1){
             int num_entries = (int) Math.sqrt(number_of_peers);
+System.out.println("_______________________________________________________________");
+            System.out.println("Num peers: " + number_of_peers);
+            System.out.println(finger_table.toString());
+            System.out.println(this_node.key);
+            if(predecessor != null)
+            System.out.println("Predecessor: " + predecessor.key);
+            else
+                System.out.println("Predecessor: Hmm");
 
             for(int i=1; i <= num_entries; i++){
                 BigInteger lookup_key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
-                System.out.println("lookupkey: " + lookup_key.toString());
+              //  System.out.println("lookupkey: " + lookup_key.toString());
             }
         }
     }
@@ -117,9 +127,13 @@ public class ChordNode {
             BaseMessage response = MessageHandler.handleMessage(request);
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            objectOutputStream.writeObject(response.convertMessage());
+            if (response != null) {
+                objectOutputStream.writeObject(response.convertMessage());
 
             System.out.println("SEND RESPONSE: " + new String(response.convertMessage()));
+            }else{
+                System.out.println("Response was null");
+            }
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -164,24 +178,26 @@ public class ChordNode {
     }
 
     public static byte[] convertFingerTable() {
-        String result = "";
+        StringBuilder result = new StringBuilder();
 
-        if(finger_table.size() == 0)
-            result = this_node.key + ":" + this_node.address + ":" + this_node.port + " ";
-        else
-            for(int i = finger_table.size(); i > 0; i++){
+        if(finger_table.size() == 0){
+            result = new StringBuilder(this_node.key + ":" + this_node.address + ":" + this_node.port + " ");
+        }
+        else{
+            for(int i = finger_table.size()-1; i >= 0; i--){
                 NodeInfo node = successors_info.get(finger_table.get(i));
-                result = result + node.key + ":" + node.address + ":" + node.port + " ";
+                result.append(node.key).append(":").append(node.address).append(":").append(node.port).append(" ");
             }
+        }
 
-        return result.getBytes();
+        return result.toString().getBytes();
     }
 
     public static void addSuccessor(NodeInfo successor) {
-        finger_table.remove(1);
+        finger_table.remove(0);
         successors_info.remove(successor.key);
 
-        finger_table.put(1, successor.key);
+        finger_table.put(0, successor.key);
         successors_info.put(successor.key, successor);
     }
 
@@ -202,8 +218,8 @@ public class ChordNode {
         if(this_node.key.equals(successor)) {
             return this_node;
         }
-        else if(isKeyBetween(successor, this_node.key, finger_table.get(1))){
-            return successors_info.get(finger_table.get(1));
+        else if(isKeyBetween(successor, this_node.key, finger_table.get(0))){
+            return successors_info.get(finger_table.get(0));
         }
         else {
             NodeInfo node = successors_info.get(closestPrecedingNode(successor));
@@ -215,8 +231,8 @@ public class ChordNode {
         if(this_node.key.equals(successor) || finger_table.size() == 0) {
             return this_node;
         }
-        else if(isKeyBetween(finger_table.get(1), this_node.key, successor)){
-            return successors_info.get(finger_table.get(1));
+        else if(isKeyBetween(finger_table.get(0), this_node.key, successor)){
+            return successors_info.get(finger_table.get(0));
         }
         else {
             NodeInfo node = successors_info.get(closestPrecedingNode(successor));
@@ -225,12 +241,12 @@ public class ChordNode {
     }
 
     public static BigInteger closestPrecedingNode(BigInteger desired_key) {
-        for (int n = finger_table.size(); n > 1; n--) {
+        for (int n = finger_table.size()-1; n > 0; n--) {
             BigInteger aux = finger_table.get(n);
             if (isKeyBetween(aux, this_node.key, desired_key))
                 return aux;
         }
-        return null;
+        return finger_table.get(0);
     }
 
     //Returns true if key is between lowerBound and upperBound, taking into account chord nodes are in a circle (lowerBound can have a higher value than upperBound)
