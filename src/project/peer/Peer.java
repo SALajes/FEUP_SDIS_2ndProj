@@ -32,7 +32,8 @@ public class Peer implements RemoteInterface {
 
     private static String service_access_point;
 
-    public static ScheduledThreadPoolExecutor scheduled_executor = new ScheduledThreadPoolExecutor(0);
+    public static ScheduledThreadPoolExecutor scheduled_executor = new ScheduledThreadPoolExecutor(20);
+    public static ExecutorService thread_executor = Executors.newCachedThreadPool();
 
     public static ChordNode node;
 
@@ -67,9 +68,9 @@ public class Peer implements RemoteInterface {
                 return;
             }
 
-            Peer object_peer;
-
             setSslProperties();
+
+            Peer object_peer;
 
             try{
                 if(args.length == 3){
@@ -88,6 +89,7 @@ public class Peer implements RemoteInterface {
                 e.getMessage();
                 return;
             }
+
 
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(object_peer, 0);
 

@@ -44,8 +44,7 @@ public class ChordNode {
         initiateServerSockets();
         printStart();
 
-        Runnable run = ()-> run();
-        Peer.scheduled_executor.schedule(run, 400, TimeUnit.MILLISECONDS);
+        Peer.thread_executor.execute(this::run);
     }
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
@@ -56,8 +55,7 @@ public class ChordNode {
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
         printStart();
 
-        Runnable run = ()-> run();
-        Peer.scheduled_executor.schedule(run, 400, TimeUnit.MILLISECONDS);
+        Peer.thread_executor.execute(this::run);
     }
 
     private void printStart() {
@@ -81,6 +79,29 @@ public class ChordNode {
         this.socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
+    private void stabilize(){
+        updateFingerTable();
+    }
+
+    private void updateFingerTable() {
+        if(number_of_peers > 1){
+            int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
+            /*System.out.println("_______________________________________________________________");
+            System.out.println("Num peers: " + number_of_peers);
+            System.out.println(finger_table.toString());
+            System.out.println(this_node.key);
+            if(predecessor != null)
+            System.out.println("Predecessor: " + predecessor.key);
+            else
+                System.out.println("Predecessor: Hmm");
+*/
+            for(int i=1; i <= num_entries; i++){
+                BigInteger lookup_key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
+                //  System.out.println("lookupkey: " + lookup_key.toString());
+            }
+        }
+    }
+
     private void run() {
         Runnable stabilize_task = ()-> stabilize();
         ChordNode.chord_executor.scheduleAtFixedRate(stabilize_task, 1, 10, TimeUnit.SECONDS);
@@ -89,35 +110,11 @@ public class ChordNode {
             try{
                 SSLSocket socket = (SSLSocket) server_socket.accept();
 
-                Runnable task = () -> receiveRequest(socket);
-                Peer.scheduled_executor.execute(task);
+                Peer.thread_executor.execute(() -> receiveRequest(socket));
 
             } catch (IOException ioException) {
                 System.out.println("Failed to accept on port " + this_node.port);
                 ioException.printStackTrace();
-            }
-        }
-    }
-
-    private void stabilize(){
-        updateFingerTable();
-    }
-
-    private void updateFingerTable() {
-        if(number_of_peers > 1){
-            int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
-System.out.println("_______________________________________________________________");
-            System.out.println("Num peers: " + number_of_peers);
-            System.out.println(finger_table.toString());
-            System.out.println(this_node.key);
-            if(predecessor != null)
-            System.out.println("Predecessor: " + predecessor.key);
-            else
-                System.out.println("Predecessor: Hmm");
-
-            for(int i=1; i <= num_entries; i++){
-                BigInteger lookup_key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
-              //  System.out.println("lookupkey: " + lookup_key.toString());
             }
         }
     }
@@ -149,8 +146,10 @@ System.out.println("____________________________________________________________
 
     public static BaseMessage makeRequest(BaseMessage request, String address, Integer port){
         try {
+
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
             socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
+            System.out.println("REQUEST: " + new String(request.convertMessage()));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(request.convertMessage());
