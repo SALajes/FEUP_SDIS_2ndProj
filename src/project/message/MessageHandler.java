@@ -8,16 +8,14 @@ public class MessageHandler {
             BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
             switch (message.getMessageType()) {
                 case STORED:
-                    BackupProtocol.receiveStored((StoredMessage) message);
-                    break;
+                    return BackupProtocol.receiveStored((StoredMessage) message);
                 case GETCHUNK:
                     RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                     break;
                 case GETCHUNK_ENHANCED:
                     RestoreProtocol.receiveGetChunkEnhancement((GetChunkEnhancementMessage) message);
                 case DELETE:
-                    DeleteProtocol.receiveDelete((DeleteMessage) message);
-                    break;
+                    return DeleteProtocol.receiveDelete((DeleteMessage) message);
                 case DELETE_RECEIVED:
                     DeleteProtocol.receiveDeleteReceived((DeleteReceivedMessage) message);
                     break;
