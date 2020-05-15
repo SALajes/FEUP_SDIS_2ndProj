@@ -15,13 +15,11 @@ import project.store.Store;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 public class BackupProtocol  {
 
     //------------------------------- peer initiator  ---------------------------------------------------------------
-    public static void sendPutchunk(int sender_id, int replication_degree, String file_id, ArrayList<Chunk> chunks) {
+    public static void processPutchunk(int sender_id, int replication_degree, String file_id, ArrayList<Chunk> chunks) {
 
         //sends putchunks
         for (Chunk chunk : chunks) {
@@ -31,29 +29,22 @@ public class BackupProtocol  {
 
             Store.getInstance().newBackupChunk(chunk_id, replication_degree);
 
-            Runnable task = () -> processPutchunk(putchunk, putchunk.getReplicationDegree(), chunk_id, 0);
-            Peer.scheduled_executor.execute(task);
+            Runnable task = () -> intermediateProcessPutchunk(putchunk);
+            Peer.thread_executor.execute(task);
         }
     }
 
-    public static void processPutchunk(PutChunkMessage message, int replication_degree, String chunk_id, int tries) {
-        if(tries >= 5){
-            System.out.println("Putchunk failed desired replication degree: " + chunk_id);
-            return;
+    public static void intermediateProcessPutchunk(PutChunkMessage message) {
+        for(int i = 1; i <= message.getReplicationDegree(); i++){
+            int rep_degree = i;
+            Runnable task = () -> sendPutchunk(message, rep_degree);
+            Peer.thread_executor.execute(task);
         }
+    }
 
-        if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) >= replication_degree) {
-            System.out.println("Backed up " + chunk_id + " with desired replication_degree");
-            return;
-        }
-
-        NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+    public static void sendPutchunk(PutChunkMessage message, int rep_degree){
+        NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree);
         ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-
-        int try_aux = tries+1;
-        long time = (long) Math.pow(2, try_aux-1);
-        Runnable task = () -> processPutchunk(message, replication_degree, chunk_id, try_aux);
-        Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
     }
 
     public static CancelBackupMessage receiveStored(StoredMessage stored){
@@ -77,48 +68,34 @@ public class BackupProtocol  {
         return null;
     }
 
-
     // ---------------------- Responses to Peer initiator -----------------------------------------
-
-
-
-    public static void receivePutchunk(PutChunkMessage putchunk){
+    public static BaseMessage receivePutchunk(PutChunkMessage putchunk){
 
         String file_id = putchunk.getFileId();
 
         if(Store.getInstance().checkBackupChunksOccurrences(file_id + "_" + putchunk.getChunkNo()) != -1) {
-            return;
+            return null;
         }
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
-            Runnable task = ()-> sendStored(putchunk);
-            Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
+            return sendStored(putchunk);
         }
-
-        if(putchunk.getReplicationDegree() > 0 ) {
-            //each peer only send
-
-            String chunk_id = file_id + "_" + putchunk.getChunkNo();
-
-            Runnable task = () -> processPutchunk(putchunk, putchunk.getReplicationDegree() - 1, chunk_id, 0);
-            Peer.scheduled_executor.execute(task);
+        else{
+            //TODO caso ele já tenha guardado o chunk ou nao tenha espaço, temos de pedir ao seu sucessor para a guardar
+            return null;
         }
-
     }
-
 
     private static StoredMessage sendStored(PutChunkMessage putchunk) {
         int chunkNo = putchunk.getChunkNo();
         String fileId = putchunk.getFileId();
         String chunk_id = fileId + "_" + chunkNo ;
 
+        //TODO dá me ideia que nao precisamos desta parte, apenas de dar store ao chunk e devolver a mensagem stored
         if(Store.getInstance().checkAuxStoredOccurrences(chunk_id) < putchunk.getReplicationDegree()){
             FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-            //Runnable task = () -> processStore(fileId, chunkNo);
-           // new Thread(task).start();
             return processStore(fileId, chunkNo);
-
         }
         Store.getInstance().removeAuxStoredOccurrences(chunk_id);
 
@@ -129,6 +106,7 @@ public class BackupProtocol  {
         return new StoredMessage(Peer.id, fileId,  chunkNo);
     }
 
+//TODO penso que ja nao precisamos do cancel backup
     public static void receiveCancelBackup(CancelBackupMessage cancel_backup){
         if(Peer.id == cancel_backup.getReceiver_id()){
             FileManager.removeChunk(cancel_backup.getFileId(), cancel_backup.getChunkNo(), false);

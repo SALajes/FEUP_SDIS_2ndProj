@@ -68,7 +68,7 @@ public class ReclaimProtocol {
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
 
-        BackupProtocol.processPutchunk(putchunk, putchunk.getReplicationDegree(), chunk_id, 0);
+        BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
     }
 
 }

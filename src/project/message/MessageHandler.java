@@ -21,8 +21,7 @@ public class MessageHandler {
                     ReclaimProtocol.receiveRemoved((RemovedMessage) message);
                     break;
                 case PUTCHUNK:
-                    BackupProtocol.receivePutchunk((PutChunkMessage) message);
-                    break;
+                    return BackupProtocol.receivePutchunk((PutChunkMessage) message);
                 case CANCEL_BACKUP:
                     BackupProtocol.receiveCancelBackup((CancelBackupMessage) message);
                     break;
