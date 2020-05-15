@@ -5,11 +5,15 @@ import project.message.BaseMessage;
 import project.message.CancelBackupMessage;
 import project.message.PutChunkMessage;
 import project.message.StoredMessage;
+import project.peer.ChordNode;
+import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
 import project.store.FilesListing;
 import project.store.Store;
 
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -128,5 +132,16 @@ public class BackupProtocol  {
         if(Peer.id == cancel_backup.getReceiver_id()){
             FileManager.removeChunk(cancel_backup.getFileId(), cancel_backup.getChunkNo(), false);
         }
+    }
+
+    //----------------------------------------------
+    public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree){
+        try {
+            BigInteger key = ChordNode.generateKey(file_id + ":" + chunk_no + ":" + rep_degree + ":" + Peer.id);
+            return ChordNode.findSuccessor(key);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

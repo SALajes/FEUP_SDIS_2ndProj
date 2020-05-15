@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public class ChordNode {
     public static int number_of_peers;
 
-    private int m = 128;
+    private static int m = 128;
 
     public static NodeInfo this_node;
     public static NodeInfo predecessor;
@@ -40,7 +40,7 @@ public class ChordNode {
     public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
         number_of_peers = 1;
         String address = InetAddress.getLocalHost().getHostAddress();
-        this_node = new NodeInfo(generateKey(address, port), address, port);
+        this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         initiateServerSockets();
         printStart();
 
@@ -50,7 +50,7 @@ public class ChordNode {
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
         number_of_peers = 0;
         String address = InetAddress.getLocalHost().getHostAddress();
-        this_node = new NodeInfo(generateKey(address, port), address, port);
+        this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         initiateServerSockets();
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
         printStart();
@@ -63,12 +63,11 @@ public class ChordNode {
                 "\n( key: " + this_node.key.toString() + " )");
     }
 
-    private BigInteger generateKey(String address, int port) throws NoSuchAlgorithmException {
-        String unique_id = address + ":" + port;
+    public static BigInteger generateKey(String data) throws NoSuchAlgorithmException {
         BigInteger maximum = new BigInteger("2").pow(m);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(unique_id.getBytes(StandardCharsets.UTF_8));
+        byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
         return new BigInteger(1, hash).mod(maximum);
     }
 
@@ -86,13 +85,13 @@ public class ChordNode {
     private void updateFingerTable() {
         if(number_of_peers > 1){
             int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
-           /* System.out.println("_______________________________________________________________");
+            System.out.println("_______________________________________________________________");
             System.out.println("Num peers: " + number_of_peers);
             System.out.println(finger_table.get(1).key);
             System.out.println(this_node.key);
             if(predecessor != null)
-            System.out.println("Predecessor: " + predecessor.key);
-*/
+                System.out.println("Predecessor: " + predecessor.key);
+
             for(int i=1; i <= num_entries; i++){
                 BigInteger lookup_key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
                 //  System.out.println("lookupkey: " + lookup_key.toString());
