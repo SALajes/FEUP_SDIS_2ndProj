@@ -120,13 +120,6 @@ public class MessageParser {
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
-            case CANCEL_BACKUP:
-                return new CancelBackupMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
-                        message_header.get(2).trim(), //file_id
-                        Integer.parseInt(message_header.get(3).trim()), //chunk_no
-                        Integer.parseInt(message_header.get(4).trim()) //receiver_id
-                );
             case CONNECTION_REQUEST:
                 return new ConnectionRequestMessage(
                         Integer.parseInt(message_header.get(1).trim()),
