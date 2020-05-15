@@ -2,6 +2,8 @@ package project.protocols;
 
 import project.chunk.Chunk;
 import project.message.*;
+import project.peer.ChordNode;
+import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
 import project.store.FilesListing;
@@ -27,7 +29,8 @@ public class RestoreProtocol {
     public static void processGetChunk(String file_id, int chunk_no){
 
         GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
-        //makeRequest(message, String address, Integer port)
+        NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
 
     }
 

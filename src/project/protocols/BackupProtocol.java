@@ -5,6 +5,8 @@ import project.message.BaseMessage;
 import project.message.CancelBackupMessage;
 import project.message.PutChunkMessage;
 import project.message.StoredMessage;
+import project.peer.ChordNode;
+import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
 import project.store.FilesListing;
@@ -43,7 +45,8 @@ public class BackupProtocol  {
             return;
         }
 
-        //makeRequest(message, String address, Integer port)
+        NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
 
         int try_aux = tries+1;
         long time = (long) Math.pow(2, try_aux-1);
