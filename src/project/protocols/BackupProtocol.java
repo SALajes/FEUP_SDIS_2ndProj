@@ -2,7 +2,6 @@ package project.protocols;
 
 import project.chunk.Chunk;
 import project.message.BaseMessage;
-import project.message.CancelBackupMessage;
 import project.message.PutChunkMessage;
 import project.message.StoredMessage;
 import project.peer.ChordNode;
@@ -53,7 +52,7 @@ public class BackupProtocol  {
         }
     }
 
-    public static CancelBackupMessage receiveStored(StoredMessage stored){
+    public static void receiveStored(StoredMessage stored){
         String file_id = stored.getFileId();
         String chunk_id = file_id + "_" + stored.getChunkNo();
         int peer_id = stored.getSenderId();
@@ -61,7 +60,7 @@ public class BackupProtocol  {
         if(FilesListing.getInstance().getFileName(file_id) != null) {
             if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id)) {
                 //condition is true is the replication degree has been accomplished
-                return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
+              //  return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
             }
         } else {
             if(!Store.getInstance().hasReplicationDegree(chunk_id)){
@@ -70,8 +69,6 @@ public class BackupProtocol  {
             }
         }
 
-
-        return null;
     }
 
     // ---------------------- Responses to Peer initiator -----------------------------------------
@@ -88,7 +85,9 @@ public class BackupProtocol  {
             return sendStored(putchunk);
         }
         else{
-            //TODO caso ele já tenha guardado o chunk ou nao tenha espaço, temos de pedir ao seu sucessor para a guardar
+            //caso ele já tenha guardado o chunk ou nao tenha espaço, temos de pedir ao seu sucessor para a guardar
+            NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+            ChordNode.makeRequest(putchunk, nodeInfo.address, nodeInfo.port);
             return null;
         }
     }
@@ -112,12 +111,6 @@ public class BackupProtocol  {
         return new StoredMessage(Peer.id, fileId,  chunkNo);
     }
 
-//TODO penso que ja nao precisamos do cancel backup
-    public static void receiveCancelBackup(CancelBackupMessage cancel_backup){
-        if(Peer.id == cancel_backup.getReceiver_id()){
-            FileManager.removeChunk(cancel_backup.getFileId(), cancel_backup.getChunkNo(), false);
-        }
-    }
 
     //----------------------------------------------
     public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree){

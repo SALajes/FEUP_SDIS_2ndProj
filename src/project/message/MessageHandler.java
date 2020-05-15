@@ -8,7 +8,8 @@ public class MessageHandler {
             BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
             switch (message.getMessageType()) {
                 case STORED:
-                    return BackupProtocol.receiveStored((StoredMessage) message);
+                    BackupProtocol.receiveStored((StoredMessage) message);
+                    break;
                 case GETCHUNK:
                     RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                     break;
@@ -22,9 +23,6 @@ public class MessageHandler {
                     break;
                 case PUTCHUNK:
                     return BackupProtocol.receivePutchunk((PutChunkMessage) message);
-                case CANCEL_BACKUP:
-                    BackupProtocol.receiveCancelBackup((CancelBackupMessage) message);
-                    break;
                 case CHUNK:
                     RestoreProtocol.receiveChunk((ChunkMessage) message);
                     break;
