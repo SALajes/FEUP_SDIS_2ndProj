@@ -34,7 +34,7 @@ public class ConnectionProtocol {
     public static BaseMessage receiveRequest(ConnectionRequestMessage message) {
         NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
         if(ChordNode.number_of_peers == 1){
-            ChordNode.predecessor = new NodeInfo(message.getKey(), message.getAddress(), message.getPort());
+            ChordNode.setPredecessor(message.getKey(), message.getAddress(), message.getPort());
         }
         ChordNode.incrementNumberOfPeers();
         return new ConnectionResponseMessage(Peer.id, ChordNode.number_of_peers, predecessor.key, predecessor.address, predecessor.port);

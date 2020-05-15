@@ -32,6 +32,7 @@ public class ChordNode {
     public static ConcurrentHashMap<Integer, NodeInfo> finger_table = new ConcurrentHashMap<>();
 
     private static SSLServerSocket server_socket = null;
+    private static SSLServerSocketFactory server_socket_factory = null;
     private static SSLSocketFactory socket_factory = null;
 
     public static ScheduledThreadPoolExecutor chord_executor = new ScheduledThreadPoolExecutor(4);
@@ -72,7 +73,8 @@ public class ChordNode {
     }
 
     private void initiateServerSockets() throws IOException {
-        server_socket = (SSLServerSocket) SSLServerSocketFactory.getDefault().createServerSocket(this_node.port);
+        server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this_node.port);
         server_socket.setEnabledCipherSuites(server_socket.getSupportedCipherSuites());
         socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
@@ -145,7 +147,6 @@ public class ChordNode {
 
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
             socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
-            System.out.println("REQUEST: " + new String(request.convertMessage()));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(request.convertMessage());
@@ -228,11 +229,11 @@ public class ChordNode {
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
-        if(this_node.key.equals(successor) || finger_table.size() == 0) {
+        if(finger_table.size() == 0) {
             return this_node;
         }
-        else if(isKeyBetween(successor, predecessor.key, this_node.key)){
-            return predecessor;
+        else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
+            return this_node;
         }
 
         NodeInfo preceding_finger = closestPrecedingNode(successor);
