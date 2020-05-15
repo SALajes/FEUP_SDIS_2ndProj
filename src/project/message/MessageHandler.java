@@ -12,8 +12,6 @@ public class MessageHandler {
                 case GETCHUNK:
                     RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                     break;
-                case GETCHUNK_ENHANCED:
-                    RestoreProtocol.receiveGetChunkEnhancement((GetChunkEnhancementMessage) message);
                 case DELETE:
                     return DeleteProtocol.receiveDelete((DeleteMessage) message);
                 case DELETE_RECEIVED:

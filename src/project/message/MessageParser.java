@@ -94,15 +94,6 @@ public class MessageParser {
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
-            case GETCHUNK_ENHANCED:
-                return new GetChunkEnhancementMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
-                        message_header.get(2).trim(), //file_id
-                        Integer.parseInt(message_header.get(3).trim()), //chunk_no
-                        Integer.parseInt(message_header.get(4).trim()),
-                        message_header.get(5).trim()
-                        //message without a body
-                );
             case CHUNK:
                 return new ChunkMessage(
                         Integer.parseInt(message_header.get(1).trim()), //sender_id

@@ -3,6 +3,8 @@ package project.protocols;
 import project.chunk.Chunk;
 import project.message.PutChunkMessage;
 import project.message.RemovedMessage;
+import project.peer.ChordNode;
+import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
@@ -21,7 +23,8 @@ public class ReclaimProtocol {
     }
 
     public static void processRemoveMessage(RemovedMessage message) {
-        //makeRequest(message, String address, Integer port);
+        NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
     }
 
     // -------------- peer not initiator
