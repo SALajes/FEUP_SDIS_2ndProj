@@ -172,10 +172,12 @@ public class MessageParser {
                 );
             case PREDECESSOR:
             case SUCCESSOR:
-                return new FindNodeMessage(
+                return new NodeMessage(
                         Message_Type.valueOf(message_header.get(0)),
                         Integer.parseInt(message_header.get(1).trim()),
-                        new BigInteger(message_header.get(2).trim())
+                        new BigInteger(message_header.get(2).trim()),
+                        message_header.get(3).trim(),
+                        Integer.parseInt(message_header.get(4).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");

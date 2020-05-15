@@ -73,10 +73,10 @@ public class ChordNode {
     }
 
     private void initiateServerSockets() throws IOException {
-        this.server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        this.server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this_node.port);
-        this.server_socket.setEnabledCipherSuites(this.server_socket.getSupportedCipherSuites());
-        this.socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        server_socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        server_socket = (SSLServerSocket) server_socket_factory.createServerSocket(this_node.port);
+        server_socket.setEnabledCipherSuites(server_socket.getSupportedCipherSuites());
+        socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
     private void stabilize(){
@@ -149,7 +149,6 @@ public class ChordNode {
 
             SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
             socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
-            System.out.println("REQUEST: " + new String(request.convertMessage()));
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectOutputStream.writeObject(request.convertMessage());
@@ -225,11 +224,11 @@ public class ChordNode {
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
-        if(this_node.key.equals(successor) || finger_table.size() == 0) {
+        if(finger_table.size() == 0) {
             return this_node;
         }
-        else if(isKeyBetween(finger_table.get(1).key, this_node.key, successor)){
-            return finger_table.get(1);
+        else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
+            return this_node;
         }
         else return ConnectionProtocol.findPredecessor(successor, closestPrecedingNode(successor));
     }

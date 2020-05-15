@@ -26,7 +26,7 @@ public class ConnectionProtocol {
     public static BaseMessage receiveRequest(ConnectionRequestMessage message) {
         NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
         if(ChordNode.number_of_peers == 1){
-            ChordNode.predecessor = new NodeInfo(message.getKey(), message.getAddress(), message.getPort());
+            ChordNode.setPredecessor(message.getKey(), message.getAddress(), message.getPort());
         }
         ChordNode.incrementNumberOfPeers();
         return new ConnectionResponseMessage(Peer.id, ChordNode.number_of_peers, predecessor.key, predecessor.address, predecessor.port);
@@ -42,12 +42,12 @@ public class ConnectionProtocol {
     }
 
     public static NodeInfo findSuccessor(BigInteger key, NodeInfo node) {
-        NodeMessage successor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.SUCCESSOR, Peer.id, key), node.address, node.port);
+        NodeMessage successor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.FIND_SUCCESSOR, Peer.id, key), node.address, node.port);
         return new NodeInfo(successor.getKey(), successor.getAddress(), successor.getPort());
     }
 
     public static NodeInfo findPredecessor(BigInteger key, NodeInfo node) {
-        NodeMessage predecessor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.PREDECESSOR, Peer.id, key), node.address, node.port);
+        NodeMessage predecessor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.FIND_PREDECESSOR, Peer.id, key), node.address, node.port);
         System.out.println(predecessor.getKey() + " " + predecessor.getAddress() + " " + predecessor.getPort());
         return new NodeInfo(predecessor.getKey(), predecessor.getAddress(), predecessor.getPort());
     }
