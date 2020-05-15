@@ -11,40 +11,43 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class ReclaimProtocol {
-    public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number){
+
+    // --------------------- peer initiator
+    public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number) {
         RemovedMessage removedMessage = new RemovedMessage(sender_id, file_id, chunk_number);
         Runnable task = () -> processRemoveMessage(removedMessage);
         new Thread(task).start();
 
     }
 
-    public static void processRemoveMessage(RemovedMessage removedMessage){
-        //Peer.MC.sendMessage(removedMessage.convertMessage());
+    public static void processRemoveMessage(RemovedMessage message) {
+        //makeRequest(message, String address, Integer port);
     }
 
+    // -------------- peer not initiator
 
-    public static void receiveRemoved(RemovedMessage removedMessage ){
+    public static void receiveRemoved(RemovedMessage removedMessage) {
 
         String file_id = removedMessage.getFileId();
         Integer chunk_number = removedMessage.getChunkNo();
         String chunk_id = file_id + "_" + chunk_number;
 
         //check if this is this peer with a file
-        if(Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
+        if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
 
             //update local count of this chunk replication degree
             Store.getInstance().removeBackupChunkOccurrence(chunk_id, removedMessage.getSenderId());
 
-        } else if (Store.getInstance().checkStoredChunksOccurrences(chunk_id) != -1 ){
+        } else if (Store.getInstance().checkStoredChunksOccurrences(chunk_id) != -1) {
 
-            Store.getInstance().removeStoredChunkOccurrence(chunk_id, removedMessage.getSenderId() );
+            Store.getInstance().removeStoredChunkOccurrence(chunk_id, removedMessage.getSenderId());
 
             //check if count drops below the desired replication degree of that chunk
-            if(!Store.getInstance().hasReplicationDegree(chunk_id)) {
+            if (!Store.getInstance().hasReplicationDegree(chunk_id)) {
 
                 Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
 
-                if(chunk != null) {
+                if (chunk != null) {
                     Runnable task = () -> sendPutchunk(Peer.id, Store.getInstance().getReplicationDegree(chunk_id), file_id, chunk);
 
                     //initiate the chunk backup subprotocol after a random delay uniformly distributed between 0 and 400 ms
@@ -54,6 +57,7 @@ public class ReclaimProtocol {
         }
     }
 
+    // -- initiate another protocol
     public static void sendPutchunk(int sender_id, int replication_degree, String file_id, Chunk chunk) {
         //send put chunk
 
@@ -61,27 +65,8 @@ public class ReclaimProtocol {
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
 
-        processPutchunk(putchunk.convertMessage(), putchunk.getReplicationDegree(), chunk_id, 0);
-
+        BackupProtocol.processPutchunk(putchunk, putchunk.getReplicationDegree(), chunk_id, 0);
     }
 
-    private static void processPutchunk(byte[] message, int replication_degree, String chunk_id, int tries) {
-
-        if(tries >= 5){
-            System.out.println("Put chunk failed desired replication degree: " + chunk_id);
-            return;
-        }
-
-        if ( Store.getInstance().hasReplicationDegree(chunk_id)) {
-            System.out.println("Backed up " + chunk_id + " with desired replication_degree");
-            return;
-        }
-
-       // Peer.MDB.sendMessage(message);
-
-        int try_aux = tries + 1;
-        long time = (long) Math.pow(2, try_aux-1);
-        Runnable task = () -> processPutchunk(message, replication_degree, chunk_id, try_aux);
-        Peer.scheduled_executor.schedule(task, time, TimeUnit.SECONDS);
-    }
 }
+

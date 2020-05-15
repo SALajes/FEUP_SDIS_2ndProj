@@ -29,7 +29,7 @@ public class ChordNode {
     public static NodeInfo this_node;
     public static NodeInfo predecessor;
 
-    private static ConcurrentHashMap<Integer, NodeInfo> finger_table = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Integer, NodeInfo> finger_table = new ConcurrentHashMap<>();
 
     private static SSLServerSocket server_socket = null;
     private static SSLServerSocketFactory server_socket_factory = null;
@@ -86,14 +86,12 @@ public class ChordNode {
     private void updateFingerTable() {
         if(number_of_peers > 1){
             int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
-            /*System.out.println("_______________________________________________________________");
+           /* System.out.println("_______________________________________________________________");
             System.out.println("Num peers: " + number_of_peers);
-            System.out.println(finger_table.toString());
+            System.out.println(finger_table.get(1).key);
             System.out.println(this_node.key);
             if(predecessor != null)
             System.out.println("Predecessor: " + predecessor.key);
-            else
-                System.out.println("Predecessor: Hmm");
 */
             for(int i=1; i <= num_entries; i++){
                 BigInteger lookup_key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
@@ -220,7 +218,14 @@ public class ChordNode {
         else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
             return finger_table.get(1);
         }
-        else return ConnectionProtocol.findSuccessor(successor, closestPrecedingNode(successor));
+
+        NodeInfo preceding_finger = closestPrecedingNode(successor);
+
+        if(preceding_finger.key.equals(this_node.key)){
+            return this_node;
+        }
+
+        return ConnectionProtocol.findSuccessor(successor, preceding_finger);
     }
 
     public static NodeInfo findPredecessor(BigInteger successor){
@@ -230,15 +235,22 @@ public class ChordNode {
         else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
             return this_node;
         }
-        else return ConnectionProtocol.findPredecessor(successor, closestPrecedingNode(successor));
+
+        NodeInfo preceding_finger = closestPrecedingNode(successor);
+
+        if(preceding_finger.key.equals(this_node.key)){
+            return this_node;
+        }
+
+        return ConnectionProtocol.findPredecessor(successor, preceding_finger);
     }
 
     public static NodeInfo closestPrecedingNode(BigInteger key) {
-        for (int n = finger_table.size(); n > 1; n--) {
+        for (int n = finger_table.size(); n >= 1; n--) {
             if (isKeyBetween(finger_table.get(n).key, this_node.key, key))
                 return finger_table.get(n);
         }
-        return finger_table.get(1);
+        return this_node;
     }
 
     //Returns true if key is between lowerBound and upperBound, taking into account chord nodes are in a circle (lowerBound can have a higher value than upperBound)

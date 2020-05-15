@@ -230,14 +230,19 @@ public class Store {
         }
     }
 
-    public void removeStoredChunks(String file_id){
+    public boolean removeStoredChunks(String file_id){
         ArrayList<Integer> chunk_nos = new ArrayList<>(stored_chunks.get(file_id).second);
+
+        if(chunk_nos.size() == 0) {
+            return false;
+        }
 
         for(Integer chunk_number : chunk_nos) {
             stored_chunks_occurrences.remove(file_id + "_" + chunk_number);
         }
 
         stored_chunks.remove(file_id);
+        return true;
     }
 
     //-------------------- Stored Chunks Occurrences ------------------
@@ -348,14 +353,14 @@ public class Store {
     }
 
     //returns true in case there
-    public boolean addBackupChunksOccurrences(String chunk_id, int peer_id, boolean enhanced_version) {
+    public boolean addBackupChunksOccurrences(String chunk_id, int peer_id) {
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
             Pair<Integer, ArrayList<Integer>> pair = this.backup_chunks_occurrences.get(chunk_id);
 
             if(pair.second.contains(peer_id))
                 return false;
 
-            if(enhanced_version && (checkBackupChunksOccurrences(chunk_id) >= getBackupChunkReplicationDegree(chunk_id)))
+            if(checkBackupChunksOccurrences(chunk_id) >= getBackupChunkReplicationDegree(chunk_id))
                 return true;
 
             pair.second.add(peer_id);

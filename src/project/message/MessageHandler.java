@@ -8,16 +8,14 @@ public class MessageHandler {
             BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
             switch (message.getMessageType()) {
                 case STORED:
-                    BackupProtocol.receiveStored((StoredMessage) message);
-                    break;
+                    return BackupProtocol.receiveStored((StoredMessage) message);
                 case GETCHUNK:
                     RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                     break;
                 case GETCHUNK_ENHANCED:
                     RestoreProtocol.receiveGetChunkEnhancement((GetChunkEnhancementMessage) message);
                 case DELETE:
-                    DeleteProtocol.receiveDelete((DeleteMessage) message);
-                    break;
+                    return DeleteProtocol.receiveDelete((DeleteMessage) message);
                 case DELETE_RECEIVED:
                     DeleteProtocol.receiveDeleteReceived((DeleteReceivedMessage) message);
                     break;
@@ -41,8 +39,11 @@ public class MessageHandler {
                     return ConnectionProtocol.receiveFindPredecessor((FindNodeMessage) message);
                 case FIND_SUCCESSOR:
                     return ConnectionProtocol.receiveFindSuccessor((FindNodeMessage) message);
-                case PREDECESSOR:
+                case NOTIFY_SUCCESSOR:
+                    return ConnectionProtocol.receiveNotifySuccessor((NotifySuccessorMessage) message);
+                case SUCCESSOR_RESPONSE:
                 case SUCCESSOR:
+                case PREDECESSOR:
                 case CONNECTION_RESPONSE:
                 case PREDECESSOR_RESPONSE:
                     return message;
