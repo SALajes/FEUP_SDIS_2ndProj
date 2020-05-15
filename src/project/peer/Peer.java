@@ -62,7 +62,7 @@ public class Peer implements RemoteInterface {
 
             int port = Integer.parseInt(args[2]);
 
-            if( Macros.checkPort(port)){
+            if(!Macros.checkPort(port)){
                 return;
             }
 

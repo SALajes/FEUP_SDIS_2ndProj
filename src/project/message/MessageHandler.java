@@ -35,13 +35,15 @@ public class MessageHandler {
                     return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
                 case REQUEST_PREDECESSOR:
                     return ConnectionProtocol.receiveRequestPredecessor((RequestPredecessorMessage) message);
-                case PREDECESSOR:
                 case FIND_PREDECESSOR:
                     return ConnectionProtocol.receiveFindPredecessor((FindNodeMessage) message);
-                case SUCCESSOR:
                 case FIND_SUCCESSOR:
                     return ConnectionProtocol.receiveFindSuccessor((FindNodeMessage) message);
-
+                case NOTIFY_SUCCESSOR:
+                    return ConnectionProtocol.receiveNotifySuccessor((NotifySuccessorMessage) message);
+                case SUCCESSOR_RESPONSE:
+                case SUCCESSOR:
+                case PREDECESSOR:
                 case CONNECTION_RESPONSE:
                 case PREDECESSOR_RESPONSE:
                     return message;
