@@ -9,6 +9,7 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +25,11 @@ public class ReclaimProtocol {
 
     public static void processRemoveMessage(RemovedMessage message) {
         NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
-        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        try {
+            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     // -------------- peer not initiator

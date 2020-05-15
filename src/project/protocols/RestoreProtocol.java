@@ -30,7 +30,11 @@ public class RestoreProtocol {
 
         GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
         NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
-        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        try {
+            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
 
     }
 

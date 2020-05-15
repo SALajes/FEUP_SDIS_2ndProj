@@ -163,7 +163,8 @@ public class MessageParser {
                 );
             case SUCCESSOR_RESPONSE:
                 return new SuccessorResponseMessage(
-                        Integer.parseInt(message_header.get(1).trim())
+                        Integer.parseInt(message_header.get(1).trim()),
+                        message_header.get(2).trim()
                 );
             case FIND_PREDECESSOR:
             case FIND_SUCCESSOR:
@@ -180,6 +181,18 @@ public class MessageParser {
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
+                );
+            case STABILIZE:
+                return new StabilizeMessage(
+                        Integer.parseInt(message_header.get(1).trim())
+                );
+            case STABILIZE_RESPONSE:
+                return new StabilizeResponseMessage(
+                        Integer.parseInt(message_header.get(1).trim()),
+                        message_header.get(2).trim(),
+                        new BigInteger(message_header.get(3).trim()),
+                        message_header.get(4).trim(),
+                        Integer.parseInt(message_header.get(5).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");

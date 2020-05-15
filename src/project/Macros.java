@@ -14,6 +14,9 @@ public class Macros {
 
     public static final long INITIAL_STORAGE = 1000000000;
 
+    public static final String SUCCESS = "SUCCESS";
+    public static final String FAIL = "FAIL";
+
     public static boolean checkPort(Integer port){
         if( port <1024 || port>= 1 << 16){
             System.err.println("\t <port_no> must be a 16 bit integer");

@@ -12,6 +12,7 @@ import project.store.FileManager;
 import project.store.FilesListing;
 import project.store.Store;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -44,7 +45,12 @@ public class BackupProtocol  {
 
     public static void sendPutchunk(PutChunkMessage message, int rep_degree){
         NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree);
-        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        try {
+            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            //TODO THIS MEANS THE PEER YOU TRIED TO ACCESS IS DOWN
+        }
     }
 
     public static CancelBackupMessage receiveStored(StoredMessage stored){

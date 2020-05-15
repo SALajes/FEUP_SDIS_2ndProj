@@ -38,6 +38,9 @@ public class MessageHandler {
                     return ConnectionProtocol.receiveFindSuccessor((FindNodeMessage) message);
                 case NOTIFY_SUCCESSOR:
                     return ConnectionProtocol.receiveNotifySuccessor((NotifySuccessorMessage) message);
+                case STABILIZE:
+                    return ConnectionProtocol.receivedStabilize((StabilizeMessage) message);
+                case STABILIZE_RESPONSE:
                 case SUCCESSOR_RESPONSE:
                 case SUCCESSOR:
                 case PREDECESSOR:
