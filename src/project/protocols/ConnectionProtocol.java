@@ -93,10 +93,17 @@ public class ConnectionProtocol {
         return new NodeMessage(Message_Type.SUCCESSOR, Peer.id, successor.key, successor.address, successor.port);
     }
 
+    /**
+     * calls findSucessor for current node+n until an maximum of 5 times
+     * @param address
+     * @param port
+     * @return
+     */
     public static BaseMessage stabilize(String address, int port) {
         try {
             return ChordNode.makeRequest(new StabilizeMessage(Peer.id), address, port);
         } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Successor is down");
             //TODO THIS MEANS SUCCESSOR IS DOWN
             //Possibly call findSucessor for currrent node+1?
             return null;

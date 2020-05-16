@@ -37,19 +37,28 @@ public class BackupProtocol  {
     public static void intermediateProcessPutchunk(PutChunkMessage message) {
         for(int i = 1; i <= message.getReplicationDegree(); i++){
             int rep_degree = i;
-            Runnable task = () -> sendPutchunk(message, rep_degree);
-            Peer.thread_executor.execute(task);
+
+            for(int j = 0; j < 5; j++) {
+                Runnable task = () -> {
+                    try {
+                        sendPutchunk(message, rep_degree);
+                        return;
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                };
+                Peer.thread_executor.execute(task);
+
+            }
         }
     }
 
-    public static void sendPutchunk(PutChunkMessage message, int rep_degree){
+    public static void sendPutchunk(PutChunkMessage message, int rep_degree) throws IOException, ClassNotFoundException {
+
         NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree);
-        try {
-            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            //TODO THIS MEANS THE PEER YOU TRIED TO ACCESS IS DOWN
-        }
+        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        //throws exception when peer being access is down
+
     }
 
     public static void receiveStored(StoredMessage stored){
@@ -101,14 +110,9 @@ public class BackupProtocol  {
         String fileId = putchunk.getFileId();
         String chunk_id = fileId + "_" + chunkNo ;
 
-        //TODO dá me ideia que nao precisamos desta parte, apenas de dar store ao chunk e devolver a mensagem stored
-        if(Store.getInstance().checkAuxStoredOccurrences(chunk_id) < putchunk.getReplicationDegree()){
-            FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-            return processStore(fileId, chunkNo);
-        }
-        Store.getInstance().removeAuxStoredOccurrences(chunk_id);
+        FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
+        return processStore(fileId, chunkNo);
 
-        return null;
     }
 
     public static StoredMessage processStore(String fileId, int chunkNo) {
