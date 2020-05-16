@@ -106,6 +106,7 @@ public class ConnectionProtocol {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             //TODO THIS MEANS SUCCESSOR IS DOWN
+            //Possibly call findSucessor for currrent node+1?
         }
         return null;
     }
@@ -114,9 +115,7 @@ public class ConnectionProtocol {
         try {
             ChordNode.makeRequest(new StabilizeMessage(Peer.id), ChordNode.predecessor.address, ChordNode.predecessor.port);
             return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
         return false;
@@ -124,7 +123,7 @@ public class ConnectionProtocol {
 
     public static BaseMessage receivedStabilize(StabilizeMessage message) {
         if(ChordNode.predecessor == null)
-            return new StabilizeResponseMessage(Peer.id, Macros.FAIL, BigInteger.ZERO, "0", 0);
-        else return new StabilizeResponseMessage(Peer.id, Macros.SUCCESS, ChordNode.predecessor.key, ChordNode.predecessor.address, ChordNode.predecessor.port);
+            return new StabilizeResponseMessage(Peer.id, Macros.FAIL, BigInteger.ZERO, "0", 0, ChordNode.number_of_peers);
+        else return new StabilizeResponseMessage(Peer.id, Macros.SUCCESS, ChordNode.predecessor.key, ChordNode.predecessor.address, ChordNode.predecessor.port, ChordNode.number_of_peers);
     }
 }

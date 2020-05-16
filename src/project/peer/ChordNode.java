@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class ChordNode {
     public static int number_of_peers;
 
-    private static int m = 128;
+    private static final int m = 128;
 
     public static NodeInfo this_node;
     public static NodeInfo predecessor;
@@ -89,15 +89,23 @@ public class ChordNode {
     }
 
     private void stabilize() {
-        NodeInfo previous_successor = finger_table.get(1);
-        StabilizeResponseMessage new_successor = (StabilizeResponseMessage) ConnectionProtocol.stabilize(finger_table.get(1).address, finger_table.get(1).port);
+        if(finger_table.get(1) != null){
+            NodeInfo previous_successor = finger_table.get(1);
+            StabilizeResponseMessage new_successor = (StabilizeResponseMessage) ConnectionProtocol.stabilize(finger_table.get(1).address, finger_table.get(1).port);
 
-        if(new_successor.getStatus()== Macros.SUCCESS &&
-                (!this_node.equals(new_successor) && isKeyBetween(new_successor.getKey(), this_node.key, finger_table.get(1).key)))
-            finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
+            if(new_successor != null ){
+                if (new_successor.getStatus().equals(Macros.SUCCESS) &&
+                        (!this_node.key.equals(new_successor.getKey()) && isKeyBetween(new_successor.getKey(), this_node.key, finger_table.get(1).key))){
+                    finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
+                }
 
-        if(!ConnectionProtocol.notifySuccessor())
-            finger_table.replace(1, previous_successor);
+                setNumberOfPeers(new_successor.getPeers());
+
+            }
+
+            if(!ConnectionProtocol.notifySuccessor())
+                finger_table.replace(1, previous_successor);
+        }
     }
 
     private void verifyPredecessor() {
@@ -109,9 +117,10 @@ public class ChordNode {
         if(number_of_peers > 1){
             int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
             System.out.println("_______________________________________________________________");
+            System.out.println("Finger table: " + finger_table);
             System.out.println("Num peers: " + number_of_peers);
-            System.out.println(finger_table.get(1).key);
-            System.out.println(this_node.key);
+            System.out.println("Successor: "+finger_table.get(1).key);
+            System.out.println("Node: " + this_node.key);
             if(predecessor != null)
                 System.out.println("Predecessor: " + predecessor.key);
 
@@ -127,15 +136,13 @@ public class ChordNode {
     private void updateTableEntry(int entry, BigInteger lookup_key){
         NodeInfo new_node = findSuccessor(lookup_key);
 
-        if(finger_table.containsKey(entry)){
-            finger_table.remove(entry);
-            finger_table.put(entry, new_node);
-        }
+        finger_table.remove(entry);
+        finger_table.put(entry, new_node);
     }
 
     private void run() {
         Runnable stabilize_task = ()-> verifyState();
-        ChordNode.chord_executor.scheduleAtFixedRate(stabilize_task, 60, 60, TimeUnit.SECONDS);
+        ChordNode.chord_executor.scheduleAtFixedRate(stabilize_task, 10, 10, TimeUnit.SECONDS);
 
         while(true){
             try{

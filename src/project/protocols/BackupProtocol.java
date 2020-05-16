@@ -87,7 +87,11 @@ public class BackupProtocol  {
         else{
             //caso ele já tenha guardado o chunk ou nao tenha espaço, temos de pedir ao seu sucessor para a guardar
             NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
-            ChordNode.makeRequest(putchunk, nodeInfo.address, nodeInfo.port);
+            try {
+                ChordNode.makeRequest(putchunk, nodeInfo.address, nodeInfo.port);
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }

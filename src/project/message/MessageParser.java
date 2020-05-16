@@ -185,7 +185,8 @@ public class MessageParser {
                         message_header.get(2).trim(),
                         new BigInteger(message_header.get(3).trim()),
                         message_header.get(4).trim(),
-                        Integer.parseInt(message_header.get(5).trim())
+                        Integer.parseInt(message_header.get(5).trim()),
+                        Integer.parseInt(message_header.get(6).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");
