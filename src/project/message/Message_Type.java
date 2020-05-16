@@ -7,7 +7,6 @@ public enum Message_Type {
     CHUNK,
     DELETE,
     REMOVED,
-    CANCEL_BACKUP,
     DELETE_RECEIVED,
     CONNECTION_REQUEST,
     CONNECTION_RESPONSE,

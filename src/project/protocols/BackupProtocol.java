@@ -47,8 +47,16 @@ public class BackupProtocol  {
         try {
             ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            //TODO THIS MEANS THE PEER YOU TRIED TO ACCESS IS DOWN
+            //THIS MEANS THE PEER YOU TRIED TO ACCESS IS DOWN
+            try {
+                NodeInfo nodeInfo2 = getBackupPeer(message.getFileId(), message.getChunkNo(), message.getReplicationDegree() + 1);
+                ChordNode.makeRequest(message, nodeInfo2.address, nodeInfo2.port);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+
         }
     }
 
@@ -101,14 +109,9 @@ public class BackupProtocol  {
         String fileId = putchunk.getFileId();
         String chunk_id = fileId + "_" + chunkNo ;
 
-        //TODO dá me ideia que nao precisamos desta parte, apenas de dar store ao chunk e devolver a mensagem stored
-        if(Store.getInstance().checkAuxStoredOccurrences(chunk_id) < putchunk.getReplicationDegree()){
-            FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-            return processStore(fileId, chunkNo);
-        }
-        Store.getInstance().removeAuxStoredOccurrences(chunk_id);
+        FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
+        return processStore(fileId, chunkNo);
 
-        return null;
     }
 
     public static StoredMessage processStore(String fileId, int chunkNo) {
