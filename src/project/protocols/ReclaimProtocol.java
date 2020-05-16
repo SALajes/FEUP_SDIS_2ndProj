@@ -14,6 +14,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class ReclaimProtocol {
+    private static int crashed = 0;
 
     // --------------------- peer initiator
     public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number) {
@@ -72,11 +73,19 @@ public class ReclaimProtocol {
         PutChunkMessage putchunk = new PutChunkMessage(sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
-        
+
+        crashed = 0;
+
         for(int j = 0; j < 5; j++) {
+            int finalJ = j;
             Runnable task = () -> {
                 try {
-                    BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
+                    if(finalJ == 0)
+                        BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
+                    else {
+                        BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree() + crashed);
+                        crashed++;
+                    }
                     return;
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
@@ -85,6 +94,7 @@ public class ReclaimProtocol {
             Peer.thread_executor.execute(task);
 
         }
+
     }
 
 }

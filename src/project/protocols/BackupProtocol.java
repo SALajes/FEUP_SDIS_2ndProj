@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 public class BackupProtocol  {
+    private static int crashed = 0;
 
     //------------------------------- peer initiator  ---------------------------------------------------------------
     public static void processPutchunk(int sender_id, int replication_degree, String file_id, ArrayList<Chunk> chunks) {
@@ -37,11 +38,18 @@ public class BackupProtocol  {
     public static void intermediateProcessPutchunk(PutChunkMessage message) {
         for(int i = 1; i <= message.getReplicationDegree(); i++){
             int rep_degree = i;
+            crashed = 0;
 
             for(int j = 0; j < 5; j++) {
+                int finalJ = j;
                 Runnable task = () -> {
                     try {
-                        sendPutchunk(message, rep_degree);
+                        if(finalJ == 0)
+                            sendPutchunk(message, message.getReplicationDegree());
+                        else {
+                            sendPutchunk(message, message.getReplicationDegree() + crashed);
+                            crashed++;
+                        }
                         return;
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
