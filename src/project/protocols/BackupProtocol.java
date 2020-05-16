@@ -38,35 +38,24 @@ public class BackupProtocol  {
     public static void intermediateProcessPutchunk(PutChunkMessage message) {
         for(int i = 1; i <= message.getReplicationDegree(); i++){
             int rep_degree = i;
-            crashed = 0;
 
-            for(int j = 0; j < 5; j++) {
-                int finalJ = j;
-                Runnable task = () -> {
-                    try {
-                        if(finalJ == 0)
-                            sendPutchunk(message, message.getReplicationDegree());
-                        else {
-                            sendPutchunk(message, message.getReplicationDegree() + crashed);
-                            crashed++;
-                        }
-                        return;
-                    } catch (IOException | ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                };
-                Peer.thread_executor.execute(task);
-
-            }
+            Peer.thread_executor.execute(()->sendPutchunk(message, rep_degree));
         }
     }
 
-    public static void sendPutchunk(PutChunkMessage message, int rep_degree) throws IOException, ClassNotFoundException {
-
-        NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree);
-        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-        //throws exception when peer being access is down
-
+    public static void sendPutchunk(PutChunkMessage message, int rep_degree) {
+        for(int tries = 0; tries < 5; tries++) {
+            int n_try = tries;
+            try {
+                NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, n_try);
+                StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+                Peer.thread_executor.execute(()->receiveStored(stored));
+                return;
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("Could not backup chunk " + message.getFileId() + "_" + message.getChunkNo() + " (" + rep_degree + ")");
     }
 
     public static void receiveStored(StoredMessage stored){
@@ -129,9 +118,9 @@ public class BackupProtocol  {
 
 
     //----------------------------------------------
-    public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree){
+    public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree, int n_try){
         try {
-            BigInteger key = ChordNode.generateKey(file_id + ":" + chunk_no + ":" + rep_degree + ":" + Peer.id);
+            BigInteger key = ChordNode.generateKey(file_id + ":" + chunk_no + ":" + rep_degree + ":" + Peer.id + ":" + n_try);
             return ChordNode.findSuccessor(key);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
