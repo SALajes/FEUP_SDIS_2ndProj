@@ -72,8 +72,19 @@ public class ReclaimProtocol {
         PutChunkMessage putchunk = new PutChunkMessage(sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
+        
+        for(int j = 0; j < 5; j++) {
+            Runnable task = () -> {
+                try {
+                    BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
+                    return;
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            };
+            Peer.thread_executor.execute(task);
 
-        BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
+        }
     }
 
 }

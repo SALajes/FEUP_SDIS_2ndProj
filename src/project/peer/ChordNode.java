@@ -91,7 +91,15 @@ public class ChordNode {
     private void stabilize() {
         if(finger_table.get(1) != null){
             NodeInfo previous_successor = finger_table.get(1);
-            StabilizeResponseMessage new_successor = (StabilizeResponseMessage) ConnectionProtocol.stabilize(finger_table.get(1).address, finger_table.get(1).port);
+            StabilizeResponseMessage new_successor = null;
+
+            //tries 5 times
+            for(int i=0; i< 5;i++) {
+                new_successor = (StabilizeResponseMessage) ConnectionProtocol.stabilize(finger_table.get(1).address, finger_table.get(1).port);
+                if(new_successor != null) {
+                    break;
+                }
+            }
 
             if(new_successor != null ){
                 if (new_successor.getStatus().equals(Macros.SUCCESS) &&

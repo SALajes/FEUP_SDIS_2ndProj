@@ -37,27 +37,28 @@ public class BackupProtocol  {
     public static void intermediateProcessPutchunk(PutChunkMessage message) {
         for(int i = 1; i <= message.getReplicationDegree(); i++){
             int rep_degree = i;
-            Runnable task = () -> sendPutchunk(message, rep_degree);
-            Peer.thread_executor.execute(task);
+
+            for(int j = 0; j < 5; j++) {
+                Runnable task = () -> {
+                    try {
+                        sendPutchunk(message, rep_degree);
+                        return;
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                };
+                Peer.thread_executor.execute(task);
+
+            }
         }
     }
 
-    public static void sendPutchunk(PutChunkMessage message, int rep_degree){
-        NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree);
-        try {
-            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-        } catch (IOException | ClassNotFoundException e) {
-            //THIS MEANS THE PEER YOU TRIED TO ACCESS IS DOWN
-            try {
-                NodeInfo nodeInfo2 = getBackupPeer(message.getFileId(), message.getChunkNo(), message.getReplicationDegree() + 1);
-                ChordNode.makeRequest(message, nodeInfo2.address, nodeInfo2.port);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            } catch (ClassNotFoundException ex) {
-                ex.printStackTrace();
-            }
+    public static void sendPutchunk(PutChunkMessage message, int rep_degree) throws IOException, ClassNotFoundException {
 
-        }
+        NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree);
+        ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+        //throws exception when peer being access is down
+
     }
 
     public static void receiveStored(StoredMessage stored){
