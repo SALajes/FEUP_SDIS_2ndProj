@@ -15,6 +15,11 @@ public class NodeInfo {
     }
 
     @Override
+    public String toString() {
+        return "key=" + key + ", address=" + address + ", port=" + port;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

@@ -4,7 +4,6 @@ import project.Macros;
 import project.message.*;
 import project.protocols.ConnectionProtocol;
 
-import javax.crypto.Mac;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -24,9 +23,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class ChordNode {
-    public static int number_of_peers;
-
-    private static final int m = 128;
+    private static final int m = 64;
 
     public static NodeInfo this_node;
     public static NodeInfo predecessor;
@@ -39,18 +36,18 @@ public class ChordNode {
     public static ScheduledThreadPoolExecutor chord_executor = new ScheduledThreadPoolExecutor(4);
 
     public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
-        number_of_peers = 1;
         predecessor = null;
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         initiateServerSockets();
         printStart();
 
+        initializeFingerTable();
+
         Peer.thread_executor.execute(this::run);
     }
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
-        number_of_peers = 0;
         predecessor = null;
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
@@ -58,7 +55,7 @@ public class ChordNode {
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
         printStart();
 
-        updateFingerTable();
+        initializeFingerTable();
 
         Peer.thread_executor.execute(this::run);
     }
@@ -83,9 +80,9 @@ public class ChordNode {
     }
 
     private void verifyState(){
-        Peer.thread_executor.execute(()->stabilize());
-        Peer.thread_executor.execute(()->verifyPredecessor());
-        Peer.thread_executor.execute(()->updateFingerTable());
+        Peer.thread_executor.execute(this::stabilize);
+        Peer.thread_executor.execute(this::verifyPredecessor);
+        Peer.thread_executor.execute(this::updateFingerTable);
     }
 
     private void stabilize() {
@@ -98,9 +95,6 @@ public class ChordNode {
                         (!this_node.key.equals(new_successor.getKey()) && isKeyBetween(new_successor.getKey(), this_node.key, finger_table.get(1).key))){
                     finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
                 }
-
-                setNumberOfPeers(new_successor.getPeers());
-
             }
 
             if(!ConnectionProtocol.notifySuccessor())
@@ -113,36 +107,29 @@ public class ChordNode {
             predecessor = null;
     }
 
-    private void updateFingerTable() {
-        if(number_of_peers > 1){
-            int num_entries = Math.min((int) Math.sqrt(number_of_peers), m);
-            System.out.println("_______________________________________________________________");
-            System.out.println("Finger table: " + finger_table);
-            System.out.println("Num peers: " + number_of_peers);
-            System.out.println("Successor: "+finger_table.get(1).key);
-            System.out.println("Node: " + this_node.key);
-            if(predecessor != null)
-                System.out.println("Predecessor: " + predecessor.key);
+    private void initializeFingerTable(){
+        for(int i=1; i <= m; i++)
+            finger_table.put(1, this_node);
+    }
 
-            for(int i=2; i <= num_entries; i++){
-                BigInteger lookup_key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
-                int entry = i;
-                Runnable task = ()->updateTableEntry(entry, lookup_key);
-                Peer.thread_executor.execute(task);
-            }
+    private void updateFingerTable() {
+        for(int i=2; i <= m; i++){
+            BigInteger key = this_node.key.add(new BigInteger("2").pow(i-1)).mod(new BigInteger("2").pow(m));
+            int entry = i;
+            Runnable task = ()->updateTableEntry(entry, key);
+            Peer.thread_executor.execute(task);
         }
     }
 
-    private void updateTableEntry(int entry, BigInteger lookup_key){
-        NodeInfo new_node = findSuccessor(lookup_key);
+    private void updateTableEntry(int entry, BigInteger key){
+        NodeInfo node = findSuccessor(key);
 
         finger_table.remove(entry);
-        finger_table.put(entry, new_node);
+        finger_table.put(entry, node);
     }
 
     private void run() {
-        Runnable stabilize_task = ()-> verifyState();
-        ChordNode.chord_executor.scheduleAtFixedRate(stabilize_task, 10, 10, TimeUnit.SECONDS);
+        ChordNode.chord_executor.scheduleAtFixedRate(this::verifyState, 3, 30, TimeUnit.SECONDS);
 
         while(true){
             try{
@@ -163,7 +150,7 @@ public class ChordNode {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             byte[] request = (byte[]) objectInputStream.readObject();
 
-            System.out.println("RECEIVE REQUEST: " + new String(request));
+            //System.out.println("RECEIVE REQUEST: " + new String(request));
 
             BaseMessage response = MessageHandler.handleMessage(request);
 
@@ -171,7 +158,7 @@ public class ChordNode {
             if (response != null) {
                 objectOutputStream.writeObject(response.convertMessage());
 
-            System.out.println("SEND RESPONSE: " + new String(response.convertMessage()));
+            //System.out.println("SEND RESPONSE: " + new String(response.convertMessage()));
             }else{
                 System.out.println("Response was null");
             }
@@ -189,12 +176,12 @@ public class ChordNode {
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
         objectOutputStream.writeObject(request.convertMessage());
 
-        System.out.println("MAKE REQUEST: " + new String(request.convertMessage()));
+        //System.out.println("MAKE REQUEST: " + new String(request.convertMessage()));
 
         ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
         byte[] raw_response = (byte[]) objectInputStream.readObject();
 
-        System.out.println("RECEIVE RESPONSE: " + new String(raw_response));
+        //System.out.println("RECEIVE RESPONSE: " + new String(raw_response));
 
         socket.close();
 
@@ -213,23 +200,12 @@ public class ChordNode {
             node = finger_table.get(1);
         }
 
-        StringBuilder result = new StringBuilder(node.key + ":" + node.address + ":" + node.port);
-
-        return result.toString().getBytes();
+        return (node.key + ":" + node.address + ":" + node.port).getBytes();
     }
 
     public static void addSuccessor(NodeInfo successor) {
         finger_table.remove(1);
         finger_table.put(1, successor);
-    }
-
-    public static void incrementNumberOfPeers() {
-        number_of_peers++;
-    }
-
-    public static void setNumberOfPeers(int n) {
-        if(n > number_of_peers)
-            number_of_peers = n;
     }
 
     public static String setPredecessor(BigInteger key, String address, int port) {
