@@ -15,7 +15,6 @@ public class ConnectionProtocol {
 
         try {
             ConnectionResponseMessage response = (ConnectionResponseMessage) ChordNode.makeRequest(request, neighbour_address, neighbour_port);
-            ChordNode.setNumberOfPeers(response.getNumberOfPeers());
             ChordNode.setPredecessor(response.getPredecessor(), response.getAddress(), response.getPort());
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -35,11 +34,8 @@ public class ConnectionProtocol {
 
     public static BaseMessage receiveRequest(ConnectionRequestMessage message) {
         NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
-        if(ChordNode.number_of_peers == 1){
-            ChordNode.setPredecessor(message.getKey(), message.getAddress(), message.getPort());
-        }
-        ChordNode.incrementNumberOfPeers();
-        return new ConnectionResponseMessage(Peer.id, ChordNode.number_of_peers, predecessor.key, predecessor.address, predecessor.port);
+        ChordNode.setPredecessor(message.getKey(), message.getAddress(), message.getPort());
+        return new ConnectionResponseMessage(Peer.id, predecessor.key, predecessor.address, predecessor.port);
     }
 
     public static BaseMessage receiveRequestPredecessor(RequestPredecessorMessage message) {
@@ -58,9 +54,8 @@ public class ConnectionProtocol {
             ChordNode.makeRequest(contact_successor, successor.address, successor.port);
             return true;
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     public static BaseMessage receiveNotifySuccessor(NotifySuccessorMessage message) {
@@ -75,9 +70,8 @@ public class ConnectionProtocol {
             NodeMessage successor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.FIND_SUCCESSOR, Peer.id, key), node.address, node.port);
             return new NodeInfo(successor.getKey(), successor.getAddress(), successor.getPort());
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     public static NodeInfo findPredecessor(BigInteger key, NodeInfo node) {
@@ -85,9 +79,8 @@ public class ConnectionProtocol {
             NodeMessage predecessor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.FIND_PREDECESSOR, Peer.id, key), node.address, node.port);
             return new NodeInfo(predecessor.getKey(), predecessor.getAddress(), predecessor.getPort());
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     public static BaseMessage receiveFindPredecessor(FindNodeMessage message) {
@@ -111,23 +104,26 @@ public class ConnectionProtocol {
             return ChordNode.makeRequest(new StabilizeMessage(Peer.id), address, port);
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Successor is down");
+            //TODO THIS MEANS SUCCESSOR IS DOWN
+            //Possibly call findSucessor for currrent node+1?
+            return null;
         }
-        return null;
     }
 
     public static boolean checkPredecessor() {
-        try {
-            ChordNode.makeRequest(new StabilizeMessage(Peer.id), ChordNode.predecessor.address, ChordNode.predecessor.port);
-            return true;
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        if(ChordNode.predecessor != null){
+            try {
+                ChordNode.makeRequest(new StabilizeMessage(Peer.id), ChordNode.predecessor.address, ChordNode.predecessor.port);
+                return true;
+            } catch (IOException | ClassNotFoundException e) {
+            }
         }
         return false;
     }
 
     public static BaseMessage receivedStabilize(StabilizeMessage message) {
         if(ChordNode.predecessor == null)
-            return new StabilizeResponseMessage(Peer.id, Macros.FAIL, BigInteger.ZERO, "0", 0, ChordNode.number_of_peers);
-        else return new StabilizeResponseMessage(Peer.id, Macros.SUCCESS, ChordNode.predecessor.key, ChordNode.predecessor.address, ChordNode.predecessor.port, ChordNode.number_of_peers);
+            return new StabilizeResponseMessage(Peer.id, Macros.FAIL, BigInteger.ZERO, "0", 0);
+        else return new StabilizeResponseMessage(Peer.id, Macros.SUCCESS, ChordNode.predecessor.key, ChordNode.predecessor.address, ChordNode.predecessor.port);
     }
 }
