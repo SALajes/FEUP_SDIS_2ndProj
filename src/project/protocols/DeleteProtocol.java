@@ -10,6 +10,7 @@ import project.store.Store;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class DeleteProtocol {
@@ -47,13 +48,21 @@ public class DeleteProtocol {
             return;
         }
 
-        NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
-        message.setSender(nodeInfo.key);
+        String file_name = FilesListing.getInstance().getFileName(file_id);
+        int number = FilesListing.getInstance().get_number_of_chunks(file_name);
 
-        try {
-            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        for(int i = 0; i < number; i++) {
+            String chunk_id = file_id + "_" + i;
+            ArrayList<BigInteger> keys = Store.getInstance().get_backup_chunks_occurrences(chunk_id);
+            for(int j= 0; j < keys.size(); j++) {
+                NodeInfo nodeInfo = ChordNode.findPredecessor(keys.get(j));
+                message.setSender(nodeInfo.key);
+                try {
+                    ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         int try_aux = tries + 1;

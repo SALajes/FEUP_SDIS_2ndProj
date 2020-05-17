@@ -46,7 +46,11 @@ public class BackupProtocol  {
         for(int tries = 0; tries < 5; tries++) {
             try {
                 NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
+
+                if(nodeInfo == null)
+                    continue;
                 message.setSender(nodeInfo.key);
+
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
                 Peer.thread_executor.execute(()->receiveStored(stored));
                 return;
@@ -62,16 +66,9 @@ public class BackupProtocol  {
         String chunk_id = file_id + "_" + stored.getChunkNo();
         BigInteger key = stored.getSender();
 
-        if(FilesListing.getInstance().getFileName(file_id) != null) {
-            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, key)) {
-                //condition is true is the replication degree has been accomplished
-              //  return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSender());
-            }
-        } else {
-            if(!Store.getInstance().hasReplicationDegree(chunk_id)){
-                //adds to the replication degree of the stored file
-                Store.getInstance().addReplicationDegree(chunk_id, key);
-            }
+        if(!Store.getInstance().hasReplicationDegree(chunk_id)){
+            //adds to the replication degree of the stored file
+            Store.getInstance().addReplicationDegree(chunk_id, key);
         }
 
     }
