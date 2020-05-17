@@ -6,12 +6,17 @@ import java.math.BigInteger;
 
 public class BaseMessage {
     private final Message_Type message_type;
-    private final BigInteger sender;
+    private BigInteger sender;
     protected byte[] chunk;
 
     public BaseMessage(Message_Type message_type, BigInteger sender) {
         this.message_type = message_type;
         this.sender = sender;
+        this.chunk = null;
+    }
+
+    public BaseMessage(Message_Type message_type) {
+        this.message_type = message_type;
         this.chunk = null;
     }
 
@@ -40,6 +45,10 @@ public class BaseMessage {
 
     public BigInteger getSender() {
         return sender;
+    }
+
+    public void setSender(BigInteger sender) {
+        this.sender = sender;
     }
 
     public byte[] getChunk(){ return chunk; }

@@ -7,8 +7,8 @@ public class DisconnectMessage extends BaseMessage{
     private final String address;
     private final int port;
 
-    public DisconnectMessage(BigInteger sender_id, BigInteger key, String address, int port) {
-        super(Message_Type.DISCONNECT, sender_id);
+    public DisconnectMessage(BigInteger sender, BigInteger key, String address, int port) {
+        super(Message_Type.DISCONNECT, sender);
         this.key = key;
         this.address = address;
         this.port = port;

@@ -74,7 +74,7 @@ public class MessageParser {
         switch (Message_Type.valueOf(message_header.get(0))) {
             case PUTCHUNK:
                 return new PutChunkMessage(
-                        new BigInteger(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()), //chunk_no
                         Integer.parseInt(message_header.get(4).trim()), //replication_dregree
@@ -82,14 +82,14 @@ public class MessageParser {
                 );
             case STORED:
                 return new StoredMessage(
-                        new BigInteger(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender
                         message_header.get(2), //file_id
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case GETCHUNK:
                 return new GetChunkMessage(
-                        new BigInteger(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
@@ -103,19 +103,19 @@ public class MessageParser {
                 );
             case DELETE:
                 return new DeleteMessage(
-                        new BigInteger(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender
                         message_header.get(2).trim() //file_id
                         //message without a body
                 );
             case DELETE_RECEIVED:
                 return new DeleteReceivedMessage(
-                        new BigInteger(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender
                         message_header.get(2).trim() //file_id
                         //message without a body
                 );
             case REMOVED:
                 return new RemovedMessage(
-                        new BigInteger(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
@@ -123,9 +123,8 @@ public class MessageParser {
             case CONNECTION_REQUEST:
                 return new ConnectionRequestMessage(
                         new BigInteger(message_header.get(1).trim()),
-                        new BigInteger(message_header.get(2).trim()),
-                        message_header.get(3).trim(),
-                        Integer.parseInt(message_header.get(4).trim())
+                        message_header.get(2).trim(),
+                        Integer.parseInt(message_header.get(3).trim())
                 );
             case CONNECTION_RESPONSE:
                 return new ConnectionResponseMessage(
@@ -137,9 +136,8 @@ public class MessageParser {
             case REQUEST_PREDECESSOR:
                 return new RequestPredecessorMessage(
                         new BigInteger(message_header.get(1).trim()),
-                        new BigInteger(message_header.get(2).trim()),
-                        message_header.get(3).trim(),
-                        Integer.parseInt(message_header.get(4).trim())
+                        message_header.get(2).trim(),
+                        Integer.parseInt(message_header.get(3).trim())
                 );
             case PREDECESSOR_RESPONSE:
                 return new PredecessorResponseMessage(
@@ -149,9 +147,8 @@ public class MessageParser {
             case NOTIFY_SUCCESSOR:
                 return new NotifySuccessorMessage(
                         new BigInteger(message_header.get(1).trim()),
-                        new BigInteger(message_header.get(2).trim()),
-                        message_header.get(3).trim(),
-                        Integer.parseInt(message_header.get(4).trim())
+                        message_header.get(2).trim(),
+                        Integer.parseInt(message_header.get(3).trim())
                 );
             case SUCCESSOR_RESPONSE:
                 return new SuccessorResponseMessage(

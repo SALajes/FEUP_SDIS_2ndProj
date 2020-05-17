@@ -94,8 +94,8 @@ public class ChordNode {
                 return;
 
             if (new_successor.getStatus().equals(Macros.SUCCESS) &&
-                    (!this_node.key.equals(new_successor.getKey()) && isKeyBetween(new_successor.getKey(), this_node.key, finger_table.get(1).key))){
-                finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
+                    (!this_node.key.equals(new_successor.getSender()) && isKeyBetween(new_successor.getSender(), this_node.key, finger_table.get(1).key))){
+                finger_table.replace(1, new NodeInfo(new_successor.getSender(), new_successor.getAddress(), new_successor.getPort()));
             }
 
             if(!ConnectionProtocol.notifySuccessor())

@@ -12,7 +12,7 @@ import java.math.BigInteger;
 
 public class ConnectionProtocol {
     public static void connectToNetwork(String neighbour_address, int neighbour_port) {
-        ConnectionRequestMessage request = new ConnectionRequestMessage(ChordNode.this_node.key, ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
+        ConnectionRequestMessage request = new ConnectionRequestMessage(ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
 
         try {
             ConnectionResponseMessage response = (ConnectionResponseMessage) ChordNode.makeRequest(request, neighbour_address, neighbour_port);
@@ -22,7 +22,8 @@ public class ConnectionProtocol {
         }
 
         try {
-            RequestPredecessorMessage contact_predecessor = new RequestPredecessorMessage(ChordNode.this_node.key, ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
+            RequestPredecessorMessage contact_predecessor = new RequestPredecessorMessage(ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
+
             PredecessorResponseMessage predecessor_response = (PredecessorResponseMessage) ChordNode.makeRequest(contact_predecessor, ChordNode.predecessor.address, ChordNode.predecessor.port);
             if(predecessor_response.getChunk().length != 0){
                 ChordNode.setSuccessor(new String(predecessor_response.getChunk()).trim());
@@ -34,13 +35,13 @@ public class ConnectionProtocol {
     }
 
     public static BaseMessage receiveRequest(ConnectionRequestMessage message) {
-        NodeInfo predecessor = ChordNode.findPredecessor(message.getKey());
-        ChordNode.setPredecessor(message.getKey(), message.getAddress(), message.getPort());
+        NodeInfo predecessor = ChordNode.findPredecessor(message.getSender());
+        ChordNode.setPredecessor(message.getSender(), message.getAddress(), message.getPort());
         return new ConnectionResponseMessage(ChordNode.this_node.key, predecessor.key, predecessor.address, predecessor.port);
     }
 
     public static BaseMessage receiveRequestPredecessor(RequestPredecessorMessage message) {
-        NodeInfo successor = new NodeInfo(message.getKey(), message.getAddress(), message.getPort());
+        NodeInfo successor = new NodeInfo(message.getSender(), message.getAddress(), message.getPort());
         PredecessorResponseMessage response = new PredecessorResponseMessage(ChordNode.this_node.key, ChordNode.getSuccessor());
 
         ChordNode.addSuccessor(successor);
@@ -51,7 +52,7 @@ public class ConnectionProtocol {
     public static boolean notifySuccessor() {
         try {
             NodeInfo successor = ChordNode.finger_table.get(1);
-            NotifySuccessorMessage contact_successor = new NotifySuccessorMessage(ChordNode.this_node.key, ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
+            NotifySuccessorMessage contact_successor = new NotifySuccessorMessage(ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
             ChordNode.makeRequest(contact_successor, successor.address, successor.port);
             return true;
         } catch (IOException | ClassNotFoundException e) {
@@ -60,7 +61,7 @@ public class ConnectionProtocol {
     }
 
     public static BaseMessage receiveNotifySuccessor(NotifySuccessorMessage message) {
-        String status = ChordNode.setPredecessor(message.getKey(), message.getAddress(), message.getPort());
+        String status = ChordNode.setPredecessor(message.getSender(), message.getAddress(), message.getPort());
         SuccessorResponseMessage response = new SuccessorResponseMessage(ChordNode.this_node.key, status);
 
         return response;
@@ -78,6 +79,7 @@ public class ConnectionProtocol {
     public static NodeInfo findPredecessor(BigInteger key, NodeInfo node) {
         try {
             NodeMessage predecessor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.FIND_PREDECESSOR, ChordNode.this_node.key, key), node.address, node.port);
+
             return new NodeInfo(predecessor.getKey(), predecessor.getAddress(), predecessor.getPort());
         } catch (IOException | ClassNotFoundException e) {
             return null;

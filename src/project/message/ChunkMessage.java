@@ -7,7 +7,6 @@ public class ChunkMessage extends ProtocolMessage {
 
     public ChunkMessage(BigInteger sender, String file_id, Integer chunk_no, byte[] chunk) {
         super(Message_Type.CHUNK, sender, file_id);
-
         this.chunk_no = chunk_no;
         this.chunk = chunk;
     }

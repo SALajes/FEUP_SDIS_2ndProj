@@ -17,14 +17,13 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 public class BackupProtocol  {
-    private static int crashed = 0;
 
     //------------------------------- peer initiator  ---------------------------------------------------------------
-    public static void processPutchunk(int sender_id, int replication_degree, String file_id, ArrayList<Chunk> chunks) {
+    public static void processPutchunk(int replication_degree, String file_id, ArrayList<Chunk> chunks) {
 
         //sends putchunks
         for (Chunk chunk : chunks) {
-            PutChunkMessage putchunk = new PutChunkMessage(sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
+            PutChunkMessage putchunk = new PutChunkMessage(file_id, chunk.chunk_no, replication_degree, chunk.content);
 
             String chunk_id = file_id + "_" + chunk.chunk_no;
 
@@ -45,9 +44,9 @@ public class BackupProtocol  {
 
     public static void sendPutchunk(PutChunkMessage message, int rep_degree) {
         for(int tries = 0; tries < 5; tries++) {
-            int n_try = tries;
             try {
-                NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, n_try);
+                NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
+                message.setSender(nodeInfo.key);
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
                 Peer.thread_executor.execute(()->receiveStored(stored));
                 return;
@@ -61,17 +60,17 @@ public class BackupProtocol  {
     public static void receiveStored(StoredMessage stored){
         String file_id = stored.getFileId();
         String chunk_id = file_id + "_" + stored.getChunkNo();
-        int peer_id = stored.getSender();
+        BigInteger key = stored.getSender();
 
         if(FilesListing.getInstance().getFileName(file_id) != null) {
-            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id)) {
+            if(Store.getInstance().addBackupChunksOccurrences(chunk_id, key)) {
                 //condition is true is the replication degree has been accomplished
               //  return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSender());
             }
         } else {
             if(!Store.getInstance().hasReplicationDegree(chunk_id)){
                 //adds to the replication degree of the stored file
-                Store.getInstance().addReplicationDegree(chunk_id, peer_id);
+                Store.getInstance().addReplicationDegree(chunk_id, key);
             }
         }
 
@@ -105,15 +104,14 @@ public class BackupProtocol  {
     private static StoredMessage sendStored(PutChunkMessage putchunk) {
         int chunkNo = putchunk.getChunkNo();
         String fileId = putchunk.getFileId();
-        String chunk_id = fileId + "_" + chunkNo ;
 
         FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-        return processStore(fileId, chunkNo);
+        return processStore(putchunk.getSender(), fileId, chunkNo);
 
     }
 
-    public static StoredMessage processStore(String fileId, int chunkNo) {
-        return new StoredMessage(Peer.id, fileId,  chunkNo);
+    public static StoredMessage processStore(BigInteger key, String fileId, int chunkNo) {
+        return new StoredMessage(key, fileId,  chunkNo);
     }
 
 

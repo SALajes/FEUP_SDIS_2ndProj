@@ -1,6 +1,6 @@
 package project.message;
 
-import project.Macros;
+import java.math.BigInteger;
 
 import java.math.BigInteger;
 
@@ -12,6 +12,11 @@ public abstract class ProtocolMessage extends BaseMessage {
 
     public ProtocolMessage(Message_Type message_type, BigInteger sender_id, String file_id) {
         super(message_type, sender_id);
+        this.file_id = file_id;
+    }
+
+    public ProtocolMessage(Message_Type message_type, String file_id) {
+        super(message_type);
         this.file_id = file_id;
     }
 

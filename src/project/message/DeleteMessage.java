@@ -7,4 +7,7 @@ public class DeleteMessage extends ProtocolMessage {
         super(Message_Type.DELETE, sender_id, file_id);
     }
 
+    public DeleteMessage(String file_id) {
+        super(Message_Type.DELETE, file_id);
+    }
 }
