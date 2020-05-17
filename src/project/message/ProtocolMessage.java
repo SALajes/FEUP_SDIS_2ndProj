@@ -22,7 +22,7 @@ public abstract class ProtocolMessage extends BaseMessage {
 
     @Override
     public String getHeader(){
-        return super.getHeader() + this.file_id;
+        return super.getHeader() + " " + this.file_id;
     }
 
     public String getFileId() {

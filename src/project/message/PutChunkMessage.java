@@ -24,6 +24,7 @@ public class PutChunkMessage extends ProtocolMessage {
     public int getChunkNo(){
         return chunk_no;
     }
+    
     public int getReplicationDegree(){
         return replication_degree;
     }
