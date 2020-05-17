@@ -16,7 +16,7 @@ public class NodeMessage extends BaseMessage {
 
     @Override
     public String getHeader() {
-        return super.getHeader() + " " + address + " " + port;
+        return super.getHeader() + " " + key.toString() + " " + address + " " + port;
     }
 
     public String getAddress() {
