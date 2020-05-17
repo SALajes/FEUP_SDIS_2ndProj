@@ -10,6 +10,7 @@ import project.store.FileManager;
 import project.store.Store;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -17,8 +18,9 @@ public class ReclaimProtocol {
     private static int crashed = 0;
 
     // --------------------- peer initiator
-    public static void sendRemoved(Integer sender_id, String file_id, Integer chunk_number) {
-        RemovedMessage removedMessage = new RemovedMessage(sender_id, file_id, chunk_number);
+    public static void sendRemoved( String file_id, Integer chunk_number) {
+        //sends remove with is own key
+        RemovedMessage removedMessage = new RemovedMessage(ChordNode.this_node.key, file_id, chunk_number);
         Runnable task = () -> processRemoveMessage(removedMessage);
         new Thread(task).start();
 
@@ -45,11 +47,11 @@ public class ReclaimProtocol {
         if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
 
             //update local count of this chunk replication degree
-            Store.getInstance().removeBackupChunkOccurrence(chunk_id, removedMessage.getSenderId());
+            Store.getInstance().removeBackupChunkOccurrence(chunk_id, removedMessage.getKey());
 
         } else if (Store.getInstance().checkStoredChunksOccurrences(chunk_id) != -1) {
 
-            Store.getInstance().removeStoredChunkOccurrence(chunk_id, removedMessage.getSenderId());
+            Store.getInstance().removeStoredChunkOccurrence(chunk_id, removedMessage.getKey());
 
             //check if count drops below the desired replication degree of that chunk
             if (!Store.getInstance().hasReplicationDegree(chunk_id)) {
@@ -57,7 +59,7 @@ public class ReclaimProtocol {
                 Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
 
                 if (chunk != null) {
-                    Runnable task = () -> sendPutchunk(Peer.id, Store.getInstance().getReplicationDegree(chunk_id), file_id, chunk);
+                    Runnable task = () -> sendPutchunk(removedMessage.getKey(), Store.getInstance().getReplicationDegree(chunk_id), file_id, chunk);
 
                     //initiate the chunk backup subprotocol after a random delay uniformly distributed between 0 and 400 ms
                     Peer.scheduled_executor.schedule(task, new Random().nextInt(401), TimeUnit.MILLISECONDS);
@@ -67,10 +69,10 @@ public class ReclaimProtocol {
     }
 
     // -- initiate another protocol
-    public static void sendPutchunk(int sender_id, int replication_degree, String file_id, Chunk chunk) {
+    public static void sendPutchunk(BigInteger key, int replication_degree, String file_id, Chunk chunk) {
         //send put chunk
 
-        PutChunkMessage putchunk = new PutChunkMessage(sender_id, file_id, chunk.chunk_no, replication_degree, chunk.content);
+        PutChunkMessage putchunk = new PutChunkMessage(key, file_id, chunk.chunk_no, replication_degree, chunk.content);
 
         String chunk_id = file_id + "_" + chunk.chunk_no;
 
@@ -79,17 +81,13 @@ public class ReclaimProtocol {
         for(int j = 0; j < 5; j++) {
             int finalJ = j;
             Runnable task = () -> {
-                try {
-                    if(finalJ == 0)
-                        BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
-                    else {
-                        BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree() + crashed);
-                        crashed++;
-                    }
-                    return;
-                } catch (IOException | ClassNotFoundException e) {
-                    e.printStackTrace();
+                if(finalJ == 0)
+                    BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree());
+                else {
+                    BackupProtocol.sendPutchunk(putchunk, putchunk.getReplicationDegree() + crashed);
+                    crashed++;
                 }
+                return;
             };
             Peer.thread_executor.execute(task);
 

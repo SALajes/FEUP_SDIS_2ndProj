@@ -4,6 +4,7 @@ import project.Macros;
 import project.Pair;
 import project.peer.Peer;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -15,18 +16,18 @@ public class Store {
 
     //state of others chunks
     private ConcurrentHashMap<String, Pair<Integer,ArrayList<Integer>>> stored_chunks = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Pair<Integer,ArrayList<Integer>>> stored_chunks_occurrences = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, ArrayList<Integer>> aux_stored_occurrences = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Pair<Integer,ArrayList<BigInteger>>> stored_chunks_occurrences = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ArrayList<BigInteger>> aux_stored_occurrences = new ConcurrentHashMap<>();
 
     //state of restored files - key file_id - value file_name
     private Hashtable<String, String> restored_files = new Hashtable<>();
 
     //state of our files - key file_id + chunk and value wanted_replication degree and list of peers
-    private ConcurrentHashMap<String, Pair<Integer,ArrayList<Integer>>> backup_chunks_occurrences = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Pair<Integer,ArrayList<BigInteger>>> backup_chunks_occurrences = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Boolean>  getchunk_reply = new ConcurrentHashMap<>();
 
     //used for delete_enhancement, key file_id and value list of peers
-    private ConcurrentHashMap<String, ArrayList<Integer>> not_deleted = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ArrayList<BigInteger>> not_deleted = new ConcurrentHashMap<>();
 
     private static String peer_directory_path;
     private static String files_directory_path;
@@ -262,7 +263,7 @@ public class Store {
         System.out.println(Peer.id + " add stored chunk " + chunk_number + " of file " + file_id);
     }
 
-    public boolean addReplicationDegree(String chunk_id, Integer peer_id) {
+    public boolean addReplicationDegree(String chunk_id, BigInteger peer_id) {
 
         //Peer doesn't have that chunk stored
         if(!stored_chunks_occurrences.containsKey(chunk_id)) {
@@ -299,13 +300,13 @@ public class Store {
         return -1;
     }
 
-    public void removeStoredChunkOccurrence(String chunk_id, Integer peer_id) {
-        Pair<Integer,ArrayList<Integer>> value = this.stored_chunks_occurrences.get(chunk_id);
+    public void removeStoredChunkOccurrence(String chunk_id, BigInteger peer_id) {
+        Pair<Integer,ArrayList<BigInteger>> value = this.stored_chunks_occurrences.get(chunk_id);
 
         if(value != null ){
-            ArrayList<Integer> peersList = value.second;
+            ArrayList<BigInteger> peersList = value.second;
             peersList.remove(peer_id);
-            Pair<Integer, ArrayList<Integer>> pair = new Pair<>(value.first, peersList);
+            Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
             this.stored_chunks_occurrences.replace(chunk_id, pair);
         }
 
@@ -316,9 +317,9 @@ public class Store {
     }
 
     //---------------------------- BACKUP ENHANCEMENT AUXILIARY HASHMAP ----------------------------------
-    private void addAuxStoredOccurrences(String chunk_id, int peer_id) {
+    private void addAuxStoredOccurrences(String chunk_id, BigInteger peer_id) {
         if(!aux_stored_occurrences.containsKey(chunk_id)) {
-            ArrayList<Integer> peers = new ArrayList<>();
+            ArrayList<BigInteger> peers = new ArrayList<>();
             peers.add(peer_id);
             aux_stored_occurrences.put(chunk_id, peers);
         }
@@ -343,7 +344,7 @@ public class Store {
     public void newBackupChunk(String chunk_id, int replication_degree) {
 
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
-            Pair<Integer, ArrayList<Integer>> pair = this.backup_chunks_occurrences.get(chunk_id);
+            Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
 
             pair.first = replication_degree;
 
@@ -353,9 +354,9 @@ public class Store {
     }
 
     //returns true in case there
-    public boolean addBackupChunksOccurrences(String chunk_id, int peer_id) {
+    public boolean addBackupChunksOccurrences(String chunk_id, BigInteger peer_id) {
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
-            Pair<Integer, ArrayList<Integer>> pair = this.backup_chunks_occurrences.get(chunk_id);
+            Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
 
             if(pair.second.contains(peer_id))
                 return false;
@@ -380,13 +381,13 @@ public class Store {
         return backup_chunks_occurrences.get(chunk_id).first;
     }
 
-    public void removeBackupChunkOccurrence(String chunk_id, Integer peer_id) {
-        Pair<Integer,ArrayList<Integer>> value = this.backup_chunks_occurrences.get(chunk_id);
+    public void removeBackupChunkOccurrence(String chunk_id, BigInteger peer_id) {
+        Pair<Integer,ArrayList<BigInteger>> value = this.backup_chunks_occurrences.get(chunk_id);
 
         if(value != null ){
-            ArrayList<Integer> peersList = value.second;
+            ArrayList<BigInteger> peersList = value.second;
             peersList.remove(peer_id);
-            Pair<Integer, ArrayList<Integer>> pair = new Pair<>(value.first, peersList);
+            Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
             this.backup_chunks_occurrences.replace(chunk_id, pair);
         }
 
@@ -404,7 +405,7 @@ public class Store {
 
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
-            Pair<Integer,ArrayList<Integer>> value = this.backup_chunks_occurrences.get(chunk_id);
+            Pair<Integer,ArrayList<BigInteger>> value = this.backup_chunks_occurrences.get(chunk_id);
 
             if(value.second.size() > 0) {
                 return false;
@@ -420,11 +421,11 @@ public class Store {
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
 
-            Pair<Integer,ArrayList<Integer>> value =  this.backup_chunks_occurrences.get(chunk_id);
+            Pair<Integer,ArrayList<BigInteger>> value =  this.backup_chunks_occurrences.get(chunk_id);
 
             if(value.second.size() > 0) {
 
-                ArrayList<Integer> copy_by_reference = new ArrayList<>(value.second);
+                ArrayList<BigInteger> copy_by_reference = new ArrayList<>(value.second);
                 not_deleted.put(chunk_id, copy_by_reference);
             }
 
@@ -435,7 +436,7 @@ public class Store {
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
 
-            ArrayList<Integer> peers_list =  not_deleted.get(chunk_id);
+            ArrayList<BigInteger> peers_list =  not_deleted.get(chunk_id);
             if(peers_list != null) {
                 System.out.println("File " + file_id + " still as " + peers_list.size() + " peers that didn't erase chunk " + i);
             }

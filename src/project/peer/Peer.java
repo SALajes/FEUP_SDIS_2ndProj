@@ -137,7 +137,7 @@ public class Peer implements RemoteInterface {
         FilesListing.getInstance().add_file(file.getName(), file_id, number_of_chunks);
 
         ChunkFactory chunkFactory = new ChunkFactory(file, replication_degree);
-        BackupProtocol.processPutchunk(Peer.id, replication_degree, file_id, chunkFactory.getChunks());
+        BackupProtocol.processPutchunk(replication_degree, file_id, chunkFactory.getChunks());
 
         return 0;
     }

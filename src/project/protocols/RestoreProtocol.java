@@ -10,6 +10,7 @@ import project.store.FilesListing;
 import project.store.Store;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 public class RestoreProtocol {
 
@@ -25,8 +26,8 @@ public class RestoreProtocol {
 
     public static void processGetChunk(String file_id, int chunk_no){
 
-        GetChunkMessage message = new GetChunkMessage( Peer.id, file_id, chunk_no);
         NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+        GetChunkMessage message = new GetChunkMessage(nodeInfo.key, file_id, chunk_no);
         try {
             ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
         } catch (IOException | ClassNotFoundException e) {
@@ -65,12 +66,12 @@ public class RestoreProtocol {
         if (chunk == null)
             return null;
 
-        return sendChunk(Peer.id, file_id, chunk_number, chunk.content);
+        return sendChunk(getChunkMessage.getKey(), file_id, chunk_number, chunk.content);
         //doesn't need to send the message to anyone was only one peer needs to answer
     }
 
-    public static ChunkMessage sendChunk(Integer sender_id, String file_id, Integer chunk_no, byte[] chunk_data){
-        ChunkMessage chunkMessage = new ChunkMessage(sender_id, file_id, chunk_no, chunk_data);
+    public static ChunkMessage sendChunk(BigInteger key, String file_id, Integer chunk_no, byte[] chunk_data){
+        ChunkMessage chunkMessage = new ChunkMessage(key, file_id, chunk_no, chunk_data);
 
         String chunk_id = chunkMessage.getFileId() + "_" + chunkMessage.getChunkNo();
         Store.getInstance().addGetchunkReply(chunk_id);

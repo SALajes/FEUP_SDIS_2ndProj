@@ -7,8 +7,8 @@ public class ConnectionResponseMessage extends BaseMessage{
     private final String address;
     private final int port;
 
-    public ConnectionResponseMessage(int sender_id, BigInteger predecessor, String address, int port) {
-        super(Message_Type.CONNECTION_RESPONSE, sender_id);
+    public ConnectionResponseMessage(BigInteger key, BigInteger predecessor, String address, int port) {
+        super(Message_Type.CONNECTION_RESPONSE, key);
         this.predecessor = predecessor;
         this.address = address;
         this.port = port;

@@ -9,6 +9,7 @@ import project.store.FilesListing;
 import project.store.Store;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 public class DeleteProtocol {
@@ -16,7 +17,7 @@ public class DeleteProtocol {
     // --------------------   peer initiator
     public static void sendDelete(String file_id){
 
-        DeleteMessage deleteMessage = new DeleteMessage(Peer.id, file_id);
+        DeleteMessage deleteMessage = new DeleteMessage(file_id);
         Runnable task = () -> processDelete(deleteMessage, file_id, 0);
         Peer.scheduled_executor.execute(task);
     }
@@ -47,6 +48,8 @@ public class DeleteProtocol {
         }
 
         NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
+        message.putKey(nodeInfo.key);
+
         try {
             ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
         } catch (IOException | ClassNotFoundException e) {
@@ -62,7 +65,7 @@ public class DeleteProtocol {
 
     public static void receiveDeleteReceived(DeleteReceivedMessage message) {
 
-        Integer peer_id = message.getSenderId();
+        BigInteger key = message.getKey();
         String file_id = message.getFileId();
 
         String file_name = FilesListing.getInstance().getFileName(file_id);
@@ -71,10 +74,10 @@ public class DeleteProtocol {
         for(int i = 0; i < number_of_chunks; i++ ) {
             String chunk_id = file_id + "_" + i;
             //remove peer from the list of chunks backup, if chunk doesn't exists it's fine
-            Store.getInstance().removeBackupChunkOccurrence(chunk_id, peer_id);
+            Store.getInstance().removeBackupChunkOccurrence(chunk_id, key);
 
         }
-        System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSenderId());
+        System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + key);
 
 
     }
@@ -94,7 +97,8 @@ public class DeleteProtocol {
             Peer.scheduled_executor.execute(task);
         }
 
-        return new DeleteReceivedMessage(Peer.id, file_id);
+        //sends with is key of the chord
+        return new DeleteReceivedMessage(deleteMessage.getKey(), file_id);
 
     }
 

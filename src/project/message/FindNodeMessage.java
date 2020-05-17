@@ -3,19 +3,9 @@ package project.message;
 import java.math.BigInteger;
 
 public class FindNodeMessage extends BaseMessage{
-    private final BigInteger key;
 
-    public FindNodeMessage(Message_Type type, int sender_id, BigInteger key) {
-        super(type, sender_id);
-        this.key = key;
+    public FindNodeMessage(Message_Type type, BigInteger key) {
+        super(type, key);
     }
 
-    @Override
-    public String getHeader() {
-        return super.getHeader() + " " + key.toString();
-    }
-
-    public BigInteger getKey() {
-        return key;
-    }
 }
