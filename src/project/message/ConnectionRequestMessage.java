@@ -7,8 +7,8 @@ public class ConnectionRequestMessage extends BaseMessage {
     private final String address;
     private final int port;
 
-    public ConnectionRequestMessage(int sender_id, BigInteger key, String address, int port) {
-        super(Message_Type.CONNECTION_REQUEST, sender_id);
+    public ConnectionRequestMessage(BigInteger sender, BigInteger key, String address, int port) {
+        super(Message_Type.CONNECTION_REQUEST, sender);
         this.address = address;
         this.port = port;
         this.key = key;

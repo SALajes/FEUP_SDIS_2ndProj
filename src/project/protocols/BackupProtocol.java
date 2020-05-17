@@ -61,12 +61,12 @@ public class BackupProtocol  {
     public static void receiveStored(StoredMessage stored){
         String file_id = stored.getFileId();
         String chunk_id = file_id + "_" + stored.getChunkNo();
-        int peer_id = stored.getSenderId();
+        int peer_id = stored.getSender();
 
         if(FilesListing.getInstance().getFileName(file_id) != null) {
             if(Store.getInstance().addBackupChunksOccurrences(chunk_id, peer_id)) {
                 //condition is true is the replication degree has been accomplished
-              //  return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSenderId());
+              //  return new CancelBackupMessage(Peer.id, stored.getFileId(), stored.getChunkNo(), stored.getSender());
             }
         } else {
             if(!Store.getInstance().hasReplicationDegree(chunk_id)){

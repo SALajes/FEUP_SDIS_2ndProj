@@ -8,8 +8,8 @@ public class StabilizeResponseMessage extends BaseMessage {
     private final int port;
     private final String status;
 
-    public StabilizeResponseMessage(int sender_id, String status, BigInteger key, String address, int port) {
-        super(Message_Type.STABILIZE_RESPONSE, sender_id);
+    public StabilizeResponseMessage(BigInteger sender, String status, BigInteger key, String address, int port) {
+        super(Message_Type.STABILIZE_RESPONSE, sender);
         this.status = status;
         this.key = key;
         this.address = address;

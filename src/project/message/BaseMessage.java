@@ -2,19 +2,21 @@ package project.message;
 
 import project.Macros;
 
+import java.math.BigInteger;
+
 public class BaseMessage {
     private final Message_Type message_type;
-    private final int sender_id;
+    private final BigInteger sender;
     protected byte[] chunk;
 
-    public BaseMessage(Message_Type message_type, int sender_id) {
+    public BaseMessage(Message_Type message_type, BigInteger sender) {
         this.message_type = message_type;
-        this.sender_id = sender_id;
+        this.sender = sender;
         this.chunk = null;
     }
 
     public String getHeader(){
-        return this.message_type + " " + this.sender_id;
+        return this.message_type + " " + this.sender.toString();
     }
 
     public byte[] convertMessage(){
@@ -36,8 +38,8 @@ public class BaseMessage {
         return message_type;
     }
 
-    public int getSenderId() {
-        return sender_id;
+    public BigInteger getSender() {
+        return sender;
     }
 
     public byte[] getChunk(){ return chunk; }

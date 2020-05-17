@@ -45,11 +45,11 @@ public class ReclaimProtocol {
         if (Store.getInstance().checkBackupChunksOccurrences(chunk_id) != -1) {
 
             //update local count of this chunk replication degree
-            Store.getInstance().removeBackupChunkOccurrence(chunk_id, removedMessage.getSenderId());
+            Store.getInstance().removeBackupChunkOccurrence(chunk_id, removedMessage.getSender());
 
         } else if (Store.getInstance().checkStoredChunksOccurrences(chunk_id) != -1) {
 
-            Store.getInstance().removeStoredChunkOccurrence(chunk_id, removedMessage.getSenderId());
+            Store.getInstance().removeStoredChunkOccurrence(chunk_id, removedMessage.getSender());
 
             //check if count drops below the desired replication degree of that chunk
             if (!Store.getInstance().hasReplicationDegree(chunk_id)) {

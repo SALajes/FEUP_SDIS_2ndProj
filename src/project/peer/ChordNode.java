@@ -88,21 +88,14 @@ public class ChordNode {
     private void stabilize() {
         if(finger_table.get(1) != null){
             NodeInfo previous_successor = finger_table.get(1);
-            StabilizeResponseMessage new_successor = null;
+            StabilizeResponseMessage new_successor = ConnectionProtocol.stabilize(finger_table.get(1));
 
-            //tries 5 times
-            for(int i=0; i< 5;i++) {
-                new_successor = (StabilizeResponseMessage) ConnectionProtocol.stabilize(finger_table.get(1).address, finger_table.get(1).port);
-                if(new_successor != null) {
-                    break;
-                }
-            }
+            if(new_successor == null)
+                return;
 
-            if(new_successor != null ){
-                if (new_successor.getStatus().equals(Macros.SUCCESS) &&
-                        (!this_node.key.equals(new_successor.getKey()) && isKeyBetween(new_successor.getKey(), this_node.key, finger_table.get(1).key))){
-                    finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
-                }
+            if (new_successor.getStatus().equals(Macros.SUCCESS) &&
+                    (!this_node.key.equals(new_successor.getKey()) && isKeyBetween(new_successor.getKey(), this_node.key, finger_table.get(1).key))){
+                finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
             }
 
             if(!ConnectionProtocol.notifySuccessor())
@@ -126,6 +119,22 @@ public class ChordNode {
             int entry = i;
             Runnable task = ()->updateTableEntry(entry, key);
             Peer.thread_executor.execute(task);
+        }
+    }
+
+    public static void fingerTableRecovery(BigInteger key) {
+        if(finger_table.get(m).key.equals(key))
+            finger_table.replace(m, this_node);
+
+        for(int i=m-1; i > 0; i--){
+            if(finger_table.get(i).key.equals(key)){
+                finger_table.replace(i, finger_table.get(i+1));
+            }
+        }
+
+        if(finger_table.get(1).equals(this_node)){
+            System.out.println("There are no more nodes where this peer can grab on to");
+            System.exit(1);
         }
     }
 

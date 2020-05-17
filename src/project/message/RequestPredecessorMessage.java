@@ -7,8 +7,8 @@ public class RequestPredecessorMessage extends BaseMessage{
     private final String address;
     private final int port;
 
-    public RequestPredecessorMessage(int sender_id, BigInteger key, String address, int port) {
-        super(Message_Type.REQUEST_PREDECESSOR, sender_id);
+    public RequestPredecessorMessage(BigInteger sender, BigInteger key, String address, int port) {
+        super(Message_Type.REQUEST_PREDECESSOR, sender);
         this.address = address;
         this.port = port;
         this.key = key;

@@ -62,7 +62,7 @@ public class DeleteProtocol {
 
     public static void receiveDeleteReceived(DeleteReceivedMessage message) {
 
-        Integer peer_id = message.getSenderId();
+        Integer peer_id = message.getSender();
         String file_id = message.getFileId();
 
         String file_name = FilesListing.getInstance().getFileName(file_id);
@@ -74,7 +74,7 @@ public class DeleteProtocol {
             Store.getInstance().removeBackupChunkOccurrence(chunk_id, peer_id);
 
         }
-        System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSenderId());
+        System.out.println("Confirm deletion all chunks of file " + file_id + " on peer " + message.getSender());
 
 
     }

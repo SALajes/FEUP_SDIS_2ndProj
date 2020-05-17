@@ -74,7 +74,7 @@ public class MessageParser {
         switch (Message_Type.valueOf(message_header.get(0))) {
             case PUTCHUNK:
                 return new PutChunkMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()), //chunk_no
                         Integer.parseInt(message_header.get(4).trim()), //replication_dregree
@@ -82,109 +82,120 @@ public class MessageParser {
                 );
             case STORED:
                 return new StoredMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2), //file_id
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case GETCHUNK:
                 return new GetChunkMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case CHUNK:
                 return new ChunkMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()), //chunk_no
                         getMessageBody(message, message_length, first_CRLF_position) //only send body
                 );
             case DELETE:
                 return new DeleteMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim() //file_id
                         //message without a body
                 );
             case DELETE_RECEIVED:
                 return new DeleteReceivedMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim() //file_id
                         //message without a body
                 );
             case REMOVED:
                 return new RemovedMessage(
-                        Integer.parseInt(message_header.get(1).trim()), //sender_id
+                        new BigInteger(message_header.get(1).trim()), //sender_id
                         message_header.get(2).trim(), //file_id
                         Integer.parseInt(message_header.get(3).trim()) //chunk_no
                         //message without a body
                 );
             case CONNECTION_REQUEST:
                 return new ConnectionRequestMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
                 );
             case CONNECTION_RESPONSE:
                 return new ConnectionResponseMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
                 );
             case REQUEST_PREDECESSOR:
                 return new RequestPredecessorMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
                 );
             case PREDECESSOR_RESPONSE:
                 return new PredecessorResponseMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         getMessageBody(message, message_length, first_CRLF_position)
                 );
             case NOTIFY_SUCCESSOR:
                 return new NotifySuccessorMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
                 );
             case SUCCESSOR_RESPONSE:
                 return new SuccessorResponseMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         message_header.get(2).trim()
                 );
             case FIND_PREDECESSOR:
             case FIND_SUCCESSOR:
                 return new FindNodeMessage(
                         Message_Type.valueOf(message_header.get(0)),
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim())
                 );
             case PREDECESSOR:
             case SUCCESSOR:
                 return new NodeMessage(
                         Message_Type.valueOf(message_header.get(0)),
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         new BigInteger(message_header.get(2).trim()),
                         message_header.get(3).trim(),
                         Integer.parseInt(message_header.get(4).trim())
                 );
             case STABILIZE:
                 return new StabilizeMessage(
-                        Integer.parseInt(message_header.get(1).trim())
+                        new BigInteger(message_header.get(1).trim())
                 );
             case STABILIZE_RESPONSE:
                 return new StabilizeResponseMessage(
-                        Integer.parseInt(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(1).trim()),
                         message_header.get(2).trim(),
                         new BigInteger(message_header.get(3).trim()),
                         message_header.get(4).trim(),
                         Integer.parseInt(message_header.get(5).trim())
+                );
+            case DISCONNECT:
+                return new DisconnectMessage(
+                        new BigInteger(message_header.get(1).trim()),
+                        new BigInteger(message_header.get(2).trim()),
+                        message_header.get(3).trim(),
+                        Integer.parseInt(message_header.get(4).trim())
+                );
+            case MOCK:
+                return new MockMessage(
+                        new BigInteger(message_header.get(1).trim())
                 );
             default:
                 throw new InvalidMessageException("Received invalid message type");

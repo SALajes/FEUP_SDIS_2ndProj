@@ -37,7 +37,9 @@ public class MessageHandler {
                 case NOTIFY_SUCCESSOR:
                     return ConnectionProtocol.receiveNotifySuccessor((NotifySuccessorMessage) message);
                 case STABILIZE:
-                    return ConnectionProtocol.receivedStabilize((StabilizeMessage) message);
+                    return ConnectionProtocol.receivedStabilize();
+                case DISCONNECT:
+                    return ConnectionProtocol.receivedDisconnectMessage((DisconnectMessage) message);
                 case STABILIZE_RESPONSE:
                 case SUCCESSOR_RESPONSE:
                 case SUCCESSOR:

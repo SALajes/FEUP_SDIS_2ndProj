@@ -4,6 +4,7 @@ import project.Macros;
 import project.Pair;
 import project.peer.Peer;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -338,8 +339,8 @@ public class Store {
             aux_stored_occurrences.remove(chunk_id);
     }
 
-    //---------------------------- BACKUP CHUNKS ----------------------------------
 
+    //---------------------------- BACKUP CHUNKS ----------------------------------
     public void newBackupChunk(String chunk_id, int replication_degree) {
 
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
@@ -394,6 +395,10 @@ public class Store {
 
     public void removeBackupChunksOccurrences(String chunk_id) {
         this.backup_chunks_occurrences.remove(chunk_id);
+    }
+
+    public void verifyBackupChunks(BigInteger key) {
+        //TODO verify chunks that this peer backed up
     }
 
     //---------------------- DELETE ENHANCEMENT ------------------------

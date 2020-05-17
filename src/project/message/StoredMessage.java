@@ -1,10 +1,12 @@
 package project.message;
 
+import java.math.BigInteger;
+
 public class StoredMessage extends ProtocolMessage {
     private final int chunk_no;
 
-    public StoredMessage(int sender_id, String file_id, int chunk_no) {
-        super(Message_Type.STORED, sender_id, file_id);
+    public StoredMessage(BigInteger sender, String file_id, int chunk_no) {
+        super(Message_Type.STORED, sender, file_id);
 
         this.chunk_no = chunk_no;
     }

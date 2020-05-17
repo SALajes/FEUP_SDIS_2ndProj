@@ -2,16 +2,16 @@ package project.message;
 
 import java.math.BigInteger;
 
-public class NotifySuccessorMessage  extends BaseMessage{
+public class DisconnectMessage extends BaseMessage{
     private final BigInteger key;
     private final String address;
     private final int port;
 
-    public NotifySuccessorMessage(BigInteger sender, BigInteger key, String address, int port) {
-        super(Message_Type.NOTIFY_SUCCESSOR, sender);
+    public DisconnectMessage(BigInteger sender_id, BigInteger key, String address, int port) {
+        super(Message_Type.DISCONNECT, sender_id);
+        this.key = key;
         this.address = address;
         this.port = port;
-        this.key = key;
     }
 
     @Override

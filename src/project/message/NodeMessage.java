@@ -7,8 +7,8 @@ public class NodeMessage extends BaseMessage {
     private final String address;
     private final int port;
 
-    public NodeMessage(Message_Type type, int sender_id, BigInteger key, String address, int port) {
-        super(type, sender_id);
+    public NodeMessage(Message_Type type, BigInteger sender, BigInteger key, String address, int port) {
+        super(type, sender);
         this.address = address;
         this.port = port;
         this.key = key;
