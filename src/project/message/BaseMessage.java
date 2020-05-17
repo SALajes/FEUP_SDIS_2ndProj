@@ -4,7 +4,7 @@ import project.Macros;
 
 import java.math.BigInteger;
 
-public class BaseMessage {
+public class BaseMessage implements java.io.Serializable{
     private final Message_Type message_type;
     private BigInteger sender;
     protected byte[] chunk;

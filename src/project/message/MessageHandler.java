@@ -3,9 +3,7 @@ package project.message;
 import project.protocols.*;
 
 public class MessageHandler {
-    public static BaseMessage handleMessage(byte[] raw_message){
-        try {
-            BaseMessage message = MessageParser.parseMessage(raw_message, raw_message.length);
+    public static BaseMessage handleMessage(BaseMessage message){
             switch (message.getMessageType()) {
                 case STORED:
                     BackupProtocol.receiveStored((StoredMessage) message);
@@ -50,9 +48,6 @@ public class MessageHandler {
                 default:
                     break;
             }
-        } catch (InvalidMessageException e) {
-            System.out.println(e.getMessage());
-        }
         return null;
     }
 }

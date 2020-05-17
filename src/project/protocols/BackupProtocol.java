@@ -50,7 +50,6 @@ public class BackupProtocol  {
                 if(nodeInfo == null)
                     continue;
                 message.setSender(nodeInfo.key);
-                System.out.println("weeeeeeeee  " + message.getSender().toString());
 
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
                 Peer.thread_executor.execute(()->receiveStored(stored));

@@ -165,7 +165,7 @@ public class ChordNode {
         try {
 
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-            byte[] request = (byte[]) objectInputStream.readObject();
+            BaseMessage request = (BaseMessage) objectInputStream.readObject();
 
             //System.out.println("RECEIVE REQUEST: " + new String(request));
 
@@ -173,7 +173,7 @@ public class ChordNode {
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             if (response != null) {
-                objectOutputStream.writeObject(response.convertMessage());
+                objectOutputStream.writeObject(response);
 
             //System.out.println("SEND RESPONSE: " + new String(response.convertMessage()));
             }else{
@@ -191,12 +191,12 @@ public class ChordNode {
         socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
 
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        objectOutputStream.writeObject(request.convertMessage());
+        objectOutputStream.writeObject(request);
 
         //System.out.println("MAKE REQUEST: " + new String(request.convertMessage()));
 
         ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-        byte[] raw_response = (byte[]) objectInputStream.readObject();
+        BaseMessage raw_response = (BaseMessage) objectInputStream.readObject();
 
         //System.out.println("RECEIVE RESPONSE: " + new String(raw_response));
 
