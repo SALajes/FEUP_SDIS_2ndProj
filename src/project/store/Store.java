@@ -393,6 +393,10 @@ public class Store {
 
     }
 
+    public ArrayList get_backup_chunks_occurrences(String chunk_id) {
+        return backup_chunks_occurrences.get(chunk_id).second;
+    }
+
     public void removeBackupChunksOccurrences(String chunk_id) {
         this.backup_chunks_occurrences.remove(chunk_id);
     }
