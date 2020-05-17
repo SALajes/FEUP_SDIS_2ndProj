@@ -12,6 +12,11 @@ public class NotifySuccessorMessage  extends BaseMessage{
         this.port = port;
     }
 
+    @Override
+    public String getHeader() {
+        return super.getHeader() + " " + address + " " + port;
+    }
+
     public String getAddress() {
         return address;
     }
