@@ -1,5 +1,6 @@
 package project.protocols;
 
+import project.Macros;
 import project.chunk.Chunk;
 import project.message.BaseMessage;
 import project.message.PutChunkMessage;
@@ -8,7 +9,6 @@ import project.peer.ChordNode;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
-import project.store.FilesListing;
 import project.store.Store;
 
 import java.io.IOException;
@@ -52,8 +52,12 @@ public class BackupProtocol  {
                 message.setSender(nodeInfo.key);
 
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-                Peer.thread_executor.execute(()->receiveStored(stored));
-                return;
+                if(stored.getStatus().equals(Macros.FAIL))
+                    continue;
+                else {
+                    Peer.thread_executor.execute(()->receiveStored(stored));
+                    return;
+                }
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -68,11 +72,7 @@ public class BackupProtocol  {
         BigInteger key = stored.getSender();
         System.out.println("STORED HAS: " + chunk_id + " " + key);
 
-        if(!Store.getInstance().hasReplicationDegree(chunk_id)){
-            //adds to the replication degree of the stored file
-            Store.getInstance().addReplicationDegree(chunk_id, key);
-        }
-
+        Store.getInstance().addBackupChunksOccurrences(chunk_id, key);
     }
 
     // ---------------------- Responses to Peer initiator -----------------------------------------
@@ -81,36 +81,27 @@ public class BackupProtocol  {
         String file_id = putchunk.getFileId();
 
         if(Store.getInstance().checkBackupChunksOccurrences(file_id + "_" + putchunk.getChunkNo()) != -1) {
-            return null;
+            return sendStored(putchunk, Macros.FAIL);
         }
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
-            return sendStored(putchunk);
+            return sendStored(putchunk, Macros.SUCCESS);
         }
-        else{
-            //caso ele já tenha guardado o chunk ou nao tenha espaço, temos de pedir ao seu sucessor para a guardar
-            NodeInfo nodeInfo = ChordNode.findPredecessor(ChordNode.this_node.key);
-            try {
-                ChordNode.makeRequest(putchunk, nodeInfo.address, nodeInfo.port);
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
+        else return sendStored(putchunk, Macros.FAIL);
     }
 
-    private static StoredMessage sendStored(PutChunkMessage putchunk) {
+    private static StoredMessage sendStored(PutChunkMessage putchunk, String status) {
         int chunkNo = putchunk.getChunkNo();
         String fileId = putchunk.getFileId();
 
         FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-        return processStore(putchunk.getSender(), fileId, chunkNo);
+        return processStore(putchunk.getSender(), fileId, chunkNo, status);
 
     }
 
-    public static StoredMessage processStore(BigInteger key, String fileId, int chunkNo) {
-        return new StoredMessage(key, fileId,  chunkNo);
+    public static StoredMessage processStore(BigInteger key, String fileId, int chunkNo, String status) {
+        return new StoredMessage(key, fileId,  chunkNo, status);
     }
 
 

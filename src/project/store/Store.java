@@ -351,6 +351,7 @@ public class Store {
             this.backup_chunks_occurrences.replace(chunk_id, pair);
         }
         else this.backup_chunks_occurrences.put(chunk_id, new Pair<>(replication_degree, new ArrayList<>()));
+
     }
 
     //returns true in case there
