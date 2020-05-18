@@ -14,12 +14,6 @@ public class StoredMessage extends ProtocolMessage {
         this.status = status;
     }
 
-    public StoredMessage(BigInteger key, String file_id, int chunk_no) {
-        super(Message_Type.STORED, key, file_id);
-        this.chunk_no = chunk_no;
-        this.status = Macros.SUCCESS;
-    }
-
     @Override
     public String getHeader(){
         return super.getHeader() + " " + chunk_no + " " + status;

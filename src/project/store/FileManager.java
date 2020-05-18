@@ -361,11 +361,6 @@ public class FileManager {
 
         channel.write(buffer, 0, "", handler);
 
-//        try {
-//            channel.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
         Store.getInstance().addStoredChunk(file_id, chunk_number, replicationDegree, chunk_body.length);
 
@@ -383,6 +378,7 @@ public class FileManager {
             System.out.println("A chunk with number " + chunk_number + " and file_id " + file_id + " can't be store because there isn't space left.");
             return false;
         }
+
         return null;
     }
 

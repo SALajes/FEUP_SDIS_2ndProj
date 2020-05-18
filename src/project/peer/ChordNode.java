@@ -193,12 +193,8 @@ public class ChordNode {
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
         objectOutputStream.writeObject(request);
 
-        //System.out.println("MAKE REQUEST: " + new String(request.convertMessage()));
-
         ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
         BaseMessage raw_response = (BaseMessage) objectInputStream.readObject();
-
-        //System.out.println("RECEIVE RESPONSE: " + new String(raw_response));
 
         socket.close();
 

@@ -11,10 +11,12 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
+import java.awt.desktop.SystemSleepEvent;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class BackupProtocol  {
 
@@ -29,16 +31,18 @@ public class BackupProtocol  {
 
             Store.getInstance().newBackupChunk(chunk_id, replication_degree);
 
-            Runnable task = () -> intermediateProcessPutchunk(putchunk);
+            Runnable task = () -> intermediateProcessPutchunk(putchunk, replication_degree);
             Peer.thread_executor.execute(task);
         }
     }
 
-    public static void intermediateProcessPutchunk(PutChunkMessage message) {
-        for(int i = 1; i <= message.getReplicationDegree(); i++){
-            int rep_degree = i;
+    public static void intermediateProcessPutchunk(PutChunkMessage message, int rep_degree) {
+        if(rep_degree > 0){
+            Peer.thread_executor.execute(() -> sendPutchunk(message, rep_degree));
 
-            Peer.thread_executor.execute(()->sendPutchunk(message, rep_degree));
+            int i = rep_degree - 1;
+            Runnable task = () -> intermediateProcessPutchunk(message, i);
+            Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -52,10 +56,12 @@ public class BackupProtocol  {
                 message.setSender(nodeInfo.key);
 
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+                System.out.println("RECEIVE STORED (" + rep_degree + "_" + tries + "): " + new String(stored.convertMessage()));
+
                 if(stored.getStatus().equals(Macros.FAIL))
                     continue;
                 else {
-                    Peer.thread_executor.execute(()->receiveStored(stored));
+                    receiveStored(stored);
                     return;
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -66,11 +72,8 @@ public class BackupProtocol  {
     }
 
     public static void receiveStored(StoredMessage stored){
-        System.out.println("RECEIVE STORED: " + new String(stored.convertMessage()));
-        String file_id = stored.getFileId();
-        String chunk_id = file_id + "_" + stored.getChunkNo();
+        String chunk_id = stored.getFileId() + "_" + stored.getChunkNo();
         BigInteger key = stored.getSender();
-        System.out.println("STORED HAS: " + chunk_id + " " + key);
 
         Store.getInstance().addBackupChunksOccurrences(chunk_id, key);
     }
@@ -86,6 +89,7 @@ public class BackupProtocol  {
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
+            System.out.println("VAI GUARDAR");
             return sendStored(putchunk, Macros.SUCCESS);
         }
         else return sendStored(putchunk, Macros.FAIL);
@@ -96,14 +100,10 @@ public class BackupProtocol  {
         String fileId = putchunk.getFileId();
 
         FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
-        return processStore(putchunk.getSender(), fileId, chunkNo, status);
-
+        StoredMessage message = new StoredMessage(ChordNode.this_node.key, fileId,  chunkNo, status);
+        System.out.println("stored: " + new String(message.convertMessage()));
+        return message;
     }
-
-    public static StoredMessage processStore(BigInteger key, String fileId, int chunkNo, String status) {
-        return new StoredMessage(key, fileId,  chunkNo, status);
-    }
-
 
     //----------------------------------------------
     public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree, int n_try){
