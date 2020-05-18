@@ -72,7 +72,7 @@ public class ConnectionProtocol {
             NodeMessage successor = (NodeMessage) ChordNode.makeRequest(new FindNodeMessage(Message_Type.FIND_SUCCESSOR, ChordNode.this_node.key, key), node.address, node.port);
             return new NodeInfo(successor.getKey(), successor.getAddress(), successor.getPort());
         } catch (IOException | ClassNotFoundException e) {
-            return null;
+            return null; //TODO SUCCESSOR IS DOWN
         }
     }
 

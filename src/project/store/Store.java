@@ -208,9 +208,9 @@ public class Store {
      * @return true if exists and false otherwise
      */
     public boolean checkStoredChunk(String file_id, int chunk_no){
-        System.out.println("\nSTORED CHUNKS: " + stored_chunks.size());
+        //System.out.println("\nSTORED CHUNKS: " + stored_chunks.size());
         if(stored_chunks.containsKey(file_id)) {
-            System.out.println(file_id + " STORED CHUNKS: " + stored_chunks.get(file_id).second.toString());
+            //System.out.println(file_id + " STORED CHUNKS: " + stored_chunks.get(file_id).second.toString());
 
             return stored_chunks.get(file_id).second.contains(chunk_no);
         }

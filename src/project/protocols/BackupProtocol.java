@@ -43,6 +43,7 @@ public class BackupProtocol  {
             int i = rep_degree - 1;
             Runnable task = () -> intermediateProcessPutchunk(message, i);
             Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
+            //TODO WRAP CRITICAL PATH IN SYNCHRONIZED
         }
     }
 
@@ -50,13 +51,13 @@ public class BackupProtocol  {
         for(int tries = 0; tries < 5; tries++) {
             try {
                 NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
+                System.out.println("GOT KEY: " + nodeInfo.key);
 
                 if(nodeInfo == null)
                     continue;
                 message.setSender(nodeInfo.key);
 
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-                System.out.println("RECEIVE STORED (" + rep_degree + "_" + tries + "): " + new String(stored.convertMessage()));
 
                 if(stored.getStatus().equals(Macros.FAIL))
                     continue;
@@ -89,7 +90,6 @@ public class BackupProtocol  {
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
-            System.out.println("VAI GUARDAR");
             return sendStored(putchunk, Macros.SUCCESS);
         }
         else return sendStored(putchunk, Macros.FAIL);
@@ -101,7 +101,6 @@ public class BackupProtocol  {
 
         FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
         StoredMessage message = new StoredMessage(ChordNode.this_node.key, fileId,  chunkNo, status);
-        System.out.println("stored: " + new String(message.convertMessage()));
         return message;
     }
 
@@ -109,6 +108,7 @@ public class BackupProtocol  {
     public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree, int n_try){
         try {
             BigInteger key = ChordNode.generateKey(file_id + ":" + chunk_no + ":" + rep_degree + ":" + Peer.id + ":" + n_try);
+            System.out.println("looking  for key: " + key.toString());
             return ChordNode.findSuccessor(key);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();

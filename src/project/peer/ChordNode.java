@@ -33,16 +33,13 @@ public class ChordNode {
     private static SSLServerSocket server_socket = null;
     private static SSLSocketFactory socket_factory = null;
 
-    public static ScheduledThreadPoolExecutor chord_executor = new ScheduledThreadPoolExecutor(4);
-
     public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
         predecessor = null;
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         initiateServerSockets();
-        printStart();
-
         initializeFingerTable();
+        printStart();
 
         Peer.thread_executor.execute(this::run);
     }
@@ -52,11 +49,9 @@ public class ChordNode {
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         initiateServerSockets();
+        initializeFingerTable();
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
         printStart();
-
-        initializeFingerTable();
-
         Peer.thread_executor.execute(this::run);
     }
 
@@ -80,6 +75,12 @@ public class ChordNode {
     }
 
     private void verifyState(){
+        System.out.println("THIS NODE: " + this_node.key);
+        System.out.println("SUCCESSOR: " + finger_table.get(1).key);
+        if(predecessor!=null)
+            System.out.println("PREDECESSOR: " + predecessor.key);
+        System.out.println("MOCKITO");
+
         Peer.thread_executor.execute(this::stabilize);
         Peer.thread_executor.execute(this::verifyPredecessor);
         Peer.thread_executor.execute(this::updateFingerTable);
@@ -146,7 +147,7 @@ public class ChordNode {
     }
 
     private void run() {
-        ChordNode.chord_executor.scheduleAtFixedRate(this::verifyState, 3, 30, TimeUnit.SECONDS);
+        Peer.scheduled_executor.scheduleAtFixedRate(this::verifyState, 3, 10, TimeUnit.SECONDS);
 
         while(true){
             try{
@@ -167,18 +168,10 @@ public class ChordNode {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
             BaseMessage request = (BaseMessage) objectInputStream.readObject();
 
-            //System.out.println("RECEIVE REQUEST: " + new String(request));
-
             BaseMessage response = MessageHandler.handleMessage(request);
 
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            if (response != null) {
-                objectOutputStream.writeObject(response);
-
-            //System.out.println("SEND RESPONSE: " + new String(response.convertMessage()));
-            }else{
-                System.out.println("Response was null");
-            }
+            objectOutputStream.writeObject(response);
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -238,10 +231,6 @@ public class ChordNode {
         }
 
         NodeInfo preceding_finger = closestPrecedingNode(successor);
-
-        if(preceding_finger.key.equals(this_node.key)){
-            return this_node;
-        }
 
         return ConnectionProtocol.findSuccessor(successor, preceding_finger);
     }
