@@ -62,9 +62,11 @@ public class BackupProtocol  {
     }
 
     public static void receiveStored(StoredMessage stored){
+        System.out.println("RECEIVE STORED: " + new String(stored.convertMessage()));
         String file_id = stored.getFileId();
         String chunk_id = file_id + "_" + stored.getChunkNo();
         BigInteger key = stored.getSender();
+        System.out.println("STORED HAS: " + chunk_id + " " + key);
 
         if(!Store.getInstance().hasReplicationDegree(chunk_id)){
             //adds to the replication degree of the stored file
