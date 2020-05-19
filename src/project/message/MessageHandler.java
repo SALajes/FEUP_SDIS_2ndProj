@@ -16,8 +16,7 @@ public class MessageHandler {
                     DeleteProtocol.receiveDeleteReceived((DeleteReceivedMessage) message);
                     break;
                 case REMOVED:
-                    ReclaimProtocol.receiveRemoved((RemovedMessage) message);
-                    break;
+                    return ReclaimProtocol.receiveRemoved((RemovedMessage) message);
                 case REQUEST_PREDECESSOR:
                     return ConnectionProtocol.receiveRequestPredecessor((RequestPredecessorMessage) message);
                 case FIND_PREDECESSOR:
