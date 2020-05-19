@@ -21,6 +21,10 @@ public class StabilizeResponseMessage extends BaseMessage {
         return super.getHeader() + " " + status + " " + key + " " + address + " " + port;
     }
 
+    public BigInteger getKey() {
+        return key;
+    }
+
     public String getAddress() {
         return address;
     }

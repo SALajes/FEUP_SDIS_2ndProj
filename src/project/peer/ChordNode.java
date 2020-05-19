@@ -95,8 +95,8 @@ public class ChordNode {
                 return;
 
             if (new_successor.getStatus().equals(Macros.SUCCESS) &&
-                    (!this_node.key.equals(new_successor.getSender()) && isKeyBetween(new_successor.getSender(), this_node.key, finger_table.get(1).key))){
-                finger_table.replace(1, new NodeInfo(new_successor.getSender(), new_successor.getAddress(), new_successor.getPort()));
+                    (!this_node.key.equals(new_successor.getSender()) && isKeyBetween(new_successor.getKey(), this_node.key, previous_successor.key))){
+                finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
             }
 
             if(!ConnectionProtocol.notifySuccessor())
@@ -140,9 +140,12 @@ public class ChordNode {
     }
 
     private void updateTableEntry(int entry, BigInteger key){
+       // System.out.println(entry + "   " + key);
         NodeInfo node = findSuccessor(key);
+        //System.out.println(entry + " success");
+        if(node == null)
+            return;
 
-        finger_table.remove(entry);
         finger_table.put(entry, node);
     }
 
@@ -210,7 +213,6 @@ public class ChordNode {
     }
 
     public static void addSuccessor(NodeInfo successor) {
-        finger_table.remove(1);
         finger_table.put(1, successor);
     }
 
@@ -226,8 +228,11 @@ public class ChordNode {
         if(this_node.key.equals(successor)) {
             return this_node;
         }
-        else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
-            return finger_table.get(1);
+
+        NodeInfo local_successor = finger_table.get(1);
+
+        if(isKeyBetween(successor, this_node.key, local_successor.key)){
+            return local_successor;
         }
 
         NodeInfo preceding_finger = closestPrecedingNode(successor);
@@ -254,8 +259,9 @@ public class ChordNode {
 
     public static NodeInfo closestPrecedingNode(BigInteger key) {
         for (int n = finger_table.size(); n >= 1; n--) {
-            if (isKeyBetween(finger_table.get(n).key, this_node.key, key))
-                return finger_table.get(n);
+            NodeInfo finger = finger_table.get(n);
+            if ( finger != null && isKeyBetween(finger.key, this_node.key, key))
+                return finger;
         }
         return this_node;
     }
