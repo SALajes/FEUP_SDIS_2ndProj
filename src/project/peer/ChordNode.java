@@ -1,5 +1,6 @@
 package project.peer;
 
+import org.w3c.dom.Node;
 import project.Macros;
 import project.message.*;
 import project.protocols.ConnectionProtocol;
@@ -19,16 +20,20 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class ChordNode {
     private static final int m = 64;
 
+    public static final int num_successors = 3;
+
     public static NodeInfo this_node;
     public static NodeInfo predecessor;
 
     public static ConcurrentHashMap<Integer, NodeInfo> finger_table = new ConcurrentHashMap<>();
+    public static CopyOnWriteArrayList<NodeInfo> successors = new CopyOnWriteArrayList<>();
 
     private static SSLServerSocket server_socket = null;
     private static SSLSocketFactory socket_factory = null;
@@ -76,7 +81,7 @@ public class ChordNode {
 
     private void verifyState(){
         System.out.println("THIS NODE: " + this_node.key);
-        System.out.println("SUCCESSOR: " + finger_table.get(1).key);
+        System.out.println("SUCCESSOR: " + getSuccessorNode().key);
         if(predecessor!=null)
             System.out.println("PREDECESSOR: " + predecessor.key);
         System.out.println("MOCKITO");
@@ -87,9 +92,9 @@ public class ChordNode {
     }
 
     private void stabilize() {
-        if(finger_table.get(1) != null){
-            NodeInfo previous_successor = finger_table.get(1);
-            StabilizeResponseMessage new_successor = ConnectionProtocol.stabilize(finger_table.get(1));
+        if(getSuccessorNode() != null){
+            NodeInfo previous_successor = getSuccessorNode();
+            StabilizeResponseMessage new_successor = ConnectionProtocol.stabilize(previous_successor);
 
             if(new_successor == null)
                 return;
@@ -133,7 +138,7 @@ public class ChordNode {
             }
         }
 
-        if(finger_table.get(1).equals(this_node)){
+        if(getSuccessorNode().equals(this_node)){
             System.out.println("There are no more nodes where this peer can grab on to");
             System.exit(1);
         }
@@ -199,21 +204,30 @@ public class ChordNode {
 
     public static void setSuccessor(String chunk) {
         List<String> node_info = Arrays.asList(chunk.split(":"));
-        finger_table.put(1, new NodeInfo(new BigInteger(node_info.get(0).trim()), node_info.get(1).trim(), Integer.parseInt(node_info.get(2).trim())));
+        NodeInfo successor =  new NodeInfo(new BigInteger(node_info.get(0).trim()), node_info.get(1).trim(), Integer.parseInt(node_info.get(2).trim()));
+        finger_table.put(1, successor);
+        successors.add(successor);
     }
 
     public static byte[] getSuccessor() {
         NodeInfo node = this_node;
 
         if(finger_table.size() > 0){
-            node = finger_table.get(1);
+            node = getSuccessorNode();
         }
 
         return (node.key + ":" + node.address + ":" + node.port).getBytes();
     }
 
+    public static NodeInfo getSuccessorNode(){
+        return finger_table.get(1);
+    }
+
     public static void addSuccessor(NodeInfo successor) {
         finger_table.put(1, successor);
+     /*   for(int i = num_successors; i > 0; i--){
+
+        }*/
     }
 
     public static String setPredecessor(BigInteger key, String address, int port) {
@@ -229,7 +243,7 @@ public class ChordNode {
             return this_node;
         }
 
-        NodeInfo local_successor = finger_table.get(1);
+        NodeInfo local_successor = getSuccessorNode();
 
         if(isKeyBetween(successor, this_node.key, local_successor.key)){
             return local_successor;
@@ -244,7 +258,7 @@ public class ChordNode {
         if(finger_table.size() == 0) {
             return this_node;
         }
-        else if(isKeyBetween(successor, this_node.key, finger_table.get(1).key)){
+        else if(isKeyBetween(successor, this_node.key, getSuccessorNode().key)){
             return this_node;
         }
 

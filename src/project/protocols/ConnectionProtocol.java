@@ -51,7 +51,7 @@ public class ConnectionProtocol {
 
     public static boolean notifySuccessor() {
         try {
-            NodeInfo successor = ChordNode.finger_table.get(1);
+            NodeInfo successor = ChordNode.getSuccessorNode();
             NotifySuccessorMessage contact_successor = new NotifySuccessorMessage(ChordNode.this_node.key, ChordNode.this_node.address, ChordNode.this_node.port);
             ChordNode.makeRequest(contact_successor, successor.address, successor.port);
             return true;
@@ -130,7 +130,7 @@ public class ConnectionProtocol {
 
     private static void sendDisconnectMessage(DisconnectMessage message) {
         try {
-            ChordNode.makeRequest(message, ChordNode.finger_table.get(1).address, ChordNode.finger_table.get(1).port);
+            ChordNode.makeRequest(message, ChordNode.getSuccessorNode().address, ChordNode.getSuccessorNode().port);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
