@@ -148,7 +148,7 @@ public class Peer implements RemoteInterface {
      * The client shall specify the file to restore by its pathname.
      */
     @Override
-    public int restore(String file_path) throws RemoteException, InvalidFileException {
+    public int restore(String file_path) throws InvalidFileException {
 
         final String file_name = new File(file_path).getName();
 
@@ -202,7 +202,7 @@ public class Peer implements RemoteInterface {
      * It must be possible to specify a value of 0, thus reclaiming all disk space previously allocated to the service.
      */
     @Override
-    public int reclaim(int max_disk_space) throws RemoteException {
+    public int reclaim(int max_disk_space) {
         if(max_disk_space < 0) {
             System.err.println("Invalid maximum disk space");
             System.exit(-1);
