@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * class that keeps record of the conversion of file_name to file_id
  */
-public class FilesListing {
+public class FilesListing implements Serializable {
 
     private static FilesListing filesListing = new FilesListing();
     private static ConcurrentHashMap<String, Pair<String, Integer>> files = new ConcurrentHashMap<>();
@@ -27,6 +27,8 @@ public class FilesListing {
     public static FilesListing getInstance() {
         return filesListing;
     }
+
+    public static void setInstance(FilesListing filesListing) { FilesListing.filesListing = filesListing; }
 
     public String getFileId(String file_name) {
         return files.get(file_name).first;
@@ -129,7 +131,7 @@ public class FilesListing {
         return true;
     }
 
-    public static ConcurrentHashMap get_files() {
+    public static ConcurrentHashMap<String, Pair<String, Integer>> get_files() {
         return files;
     }
 }

@@ -1,8 +1,7 @@
 package project.peer;
 
-import java.io.File;
+import java.io.*;
 
-import java.io.IOException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -100,11 +99,15 @@ public class Peer implements RemoteInterface {
 
             registry.rebind(service_access_point, stub);
 
+            loadStorage();
+
             //creates folders
             Store.getInstance();
             FilesListing.getInstance();
 
             System.out.println("Peer " + id + " ready");
+
+            Runtime.getRuntime().addShutdownHook(new Thread(Peer::saveStorage));
 
         } catch (Exception e) {
             System.err.println("Peer exception: " + e.toString());
@@ -288,4 +291,75 @@ public class Peer implements RemoteInterface {
 
         return state + "---------------------------";
     }
+
+    private static void saveStorage() {
+        try {
+            String storage_file = Peer.id + "_directory/store.ser";
+
+            saveStorageFileHandling(storage_file, true);
+
+            String file_listings_file = Peer.id + "_directory/file_listings.ser";
+
+            saveStorageFileHandling(file_listings_file, false);
+
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
+    }
+
+    private static void saveStorageFileHandling(String file_name, boolean storage) throws IOException {
+
+        File file = new File(file_name);
+        if (!file.exists()) {
+            file.getParentFile().mkdirs();
+            file.createNewFile();
+        }
+
+        FileOutputStream file_output = new FileOutputStream(file_name);
+        ObjectOutputStream output = new ObjectOutputStream(file_output);
+        if(storage){
+            output.writeObject(Store.getInstance());
+        }else{
+            output.writeObject(FilesListing.getInstance());
+        }
+        output.close();
+        file_output.close();
+    }
+
+    private static void loadStorage() {
+        try {
+            String storage_file = Peer.id + "_directory/store.ser";
+
+            File file = new File(storage_file);
+            if (!file.exists()) {
+                return;
+            }
+
+            FileInputStream storage_file_input = new FileInputStream(storage_file);
+            ObjectInputStream storage_input = new ObjectInputStream(storage_file_input);
+            Store.setInstance((Store) storage_input.readObject());
+            storage_input.close();
+            storage_file_input.close();
+
+            String file_listings_file = Peer.id + "_directory/file_listings.ser";
+
+            File file2 = new File(file_listings_file);
+            if (!file2.exists()) {
+                return;
+            }
+
+            FileInputStream listing_file_input = new FileInputStream(file_listings_file);
+            ObjectInputStream listing_input = new ObjectInputStream(listing_file_input);
+            FilesListing.setInstance((FilesListing) listing_input.readObject());
+            listing_input.close();
+            listing_file_input.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 }
+

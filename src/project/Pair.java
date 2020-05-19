@@ -1,6 +1,8 @@
 package project;
 
-public class Pair<U, V> {
+import java.io.Serializable;
+
+public class Pair<U, V> implements Serializable {
 
     public U first;   	// first field of a Pair
     public V second;  	// second field of a Pair
