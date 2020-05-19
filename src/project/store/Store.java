@@ -24,7 +24,6 @@ public class Store {
 
     //state of our files - key file_id + chunk and value wanted_replication degree and list of peers
     private ConcurrentHashMap<String, Pair<Integer,ArrayList<BigInteger>>> backup_chunks_occurrences = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Boolean>  getchunk_reply = new ConcurrentHashMap<>();
 
     //used for delete_enhancement, key file_id and value list of peers
     private ConcurrentHashMap<String, ArrayList<BigInteger>> not_deleted = new ConcurrentHashMap<>();
@@ -376,7 +375,7 @@ public class Store {
     }
 
     public int checkBackupChunksOccurrences(String chunk_id) {
-        if(backup_chunks_occurrences.get(chunk_id) != null)
+        if(backup_chunks_occurrences.containsKey(chunk_id))
             return backup_chunks_occurrences.get(chunk_id).second.size();
         return -1;
     }
@@ -397,7 +396,7 @@ public class Store {
 
     }
 
-    public ArrayList get_backup_chunks_occurrences(String chunk_id) {
+    public ArrayList<BigInteger> get_backup_chunks_occurrences(String chunk_id) {
         return backup_chunks_occurrences.get(chunk_id).second;
     }
 
@@ -455,24 +454,7 @@ public class Store {
         }
     }
 
-    // --------------------------- GETCHUNK -----------------------------------
-
-    public void addGetchunkReply(String chunk_id){
-        this.getchunk_reply.put(chunk_id, false);
-    }
-
-    public void checkGetchunkReply(String chunk_id){
-        if(this.getchunk_reply.containsKey(chunk_id))
-            this.getchunk_reply.replace(chunk_id, true);
-    }
-
-    public void removeGetchunkReply(String chunk_id){
-        this.getchunk_reply.remove(chunk_id);
-    }
-
-    public boolean getGetchunkReply(String chunk_id){
-        return this.getchunk_reply.get(chunk_id);
-    }
+    // ------------------------------- RESTORE ------------------------------------
 
     public void addRestoredFile(String file_id, String file_name){
         restored_files.put(file_id, file_name);
