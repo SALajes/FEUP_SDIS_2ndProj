@@ -53,7 +53,7 @@ public class BackupProtocol  {
                 NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
                 System.out.println("GOT KEY: " + nodeInfo.key);
 
-                if(nodeInfo == null)
+                if(nodeInfo == null || nodeInfo.key.equals(ChordNode.this_node.key))
                     continue;
                 message.setSender(nodeInfo.key);
 
