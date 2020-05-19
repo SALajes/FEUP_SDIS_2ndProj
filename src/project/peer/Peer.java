@@ -273,7 +273,7 @@ public class Peer implements RemoteInterface {
             for(Integer chunk_no : pair.second){
                 state = state + "   id: " + chunk_no + "\n"
                         + "      size: " + FileManager.retrieveChunkSize(file_id, chunk_no) + "\n"
-                        + "      perceived replication degree: " + Store.getInstance().checkStoredChunksOccurrences(file_id + "_" + chunk_no) + "\n";
+                        + "      for peer with key: " + Store.getInstance().getKey(file_id + "_" + chunk_no) + "\n";
             }
         }
 

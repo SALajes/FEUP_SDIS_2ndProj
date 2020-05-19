@@ -15,9 +15,9 @@ public class Store {
     private static Store store = new Store();
 
     //state of others chunks
-    private ConcurrentHashMap<String, Pair<Integer,ArrayList<Integer>>> stored_chunks = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Pair<Integer,ArrayList<BigInteger>>> stored_chunks_occurrences = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, ArrayList<BigInteger>> aux_stored_occurrences = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Pair<Integer, ArrayList<Integer>>> stored_chunks = new ConcurrentHashMap<>();
+    //saves the file_id and the peer key that asks to save
+    private ConcurrentHashMap<String, BigInteger> stored_chunks_occurrences = new ConcurrentHashMap<>();
 
     //state of restored files - key file_id - value file_name
     private Hashtable<String, String> restored_files = new Hashtable<>();
@@ -109,6 +109,10 @@ public class Store {
         }
     }
 
+    public int getReplicationDegree(String chunk_id) {
+        return stored_chunks.get(chunk_id).first;
+    }
+
     /**
      * reclaim starts be deleting over replicated files.
      * If need, reclaims deletes replicated enough and under replicated
@@ -128,11 +132,9 @@ public class Store {
             ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).second);
 
             for(Integer chunk_number : chunks_nos) {
-                if(hasMoreThanReplicationDegree(file_id + "_" + chunk_number) ) {
-                    FileManager.removeChunk(file_id, chunk_number);
-                    if (this.storage_capacity >= occupied_storage) {
-                        return;
-                    }
+                FileManager.removeChunk(file_id, chunk_number);
+                if (this.storage_capacity >= occupied_storage) {
+                    return;
                 }
             }
         }
@@ -175,7 +177,7 @@ public class Store {
         return stored_chunks;
     }
 
-    public synchronized void addStoredChunk(String file_id, int chunk_number, Integer replicationDegree, long chunk_length) {
+    public synchronized void addStoredChunk(String file_id, int chunk_number, Integer replicationDegree, long chunk_length, BigInteger key) {
 
         if(!stored_chunks.containsKey(file_id)) {
             ArrayList<Integer> chunks_stored = new ArrayList<>();
@@ -186,7 +188,7 @@ public class Store {
             //update the current space used for storage
             AddOccupiedStorage(chunk_length);
 
-            addStoredChunksOccurrences(file_id, chunk_number, replicationDegree);
+            addStoredChunksOccurrences(file_id, chunk_number, key);
         }
         else if(!checkStoredChunk(file_id, chunk_number)) {
             Pair<Integer, ArrayList<Integer>> pair = stored_chunks.get(file_id);
@@ -196,7 +198,7 @@ public class Store {
             //update the current space used for storage
             AddOccupiedStorage(chunk_length);
 
-            addStoredChunksOccurrences(file_id, chunk_number, replicationDegree);
+            addStoredChunksOccurrences(file_id, chunk_number, key);
         }
     }
 
@@ -251,94 +253,27 @@ public class Store {
     //-------------------- Stored Chunks Occurrences ------------------
 
     /**
-     * add an entry to the stored_chunks_occurrences, with the own Peer-id because
-     * he is one of the peers that has a stored chunk of the chunk with number and file_id passed as argument
+     * add an entry to the stored_chunks_occurrences
      * @param file_id encoded
      * @param chunk_number number of the chunk
-     * @param replicationDegree wanted replication degree
+     * @param key key of the peer initiato
      */
-    private void addStoredChunksOccurrences(String file_id, int chunk_number, Integer replicationDegree) {
+    private void addStoredChunksOccurrences(String file_id, int chunk_number, BigInteger key) {
         ArrayList<Integer> occurrences = new ArrayList<>();
         occurrences.add(Peer.id);
-        Pair pair1 = new Pair<>(replicationDegree, occurrences);
-        stored_chunks_occurrences.put(file_id + "_" + chunk_number, pair1 );
+        stored_chunks_occurrences.put(file_id + "_" + chunk_number, key );
         System.out.println(Peer.id + " add stored chunk " + chunk_number + " of file " + file_id);
     }
 
-    public boolean addReplicationDegree(String chunk_id, BigInteger peer_id) {
-
-        //Peer doesn't have that chunk stored
-        if(!stored_chunks_occurrences.containsKey(chunk_id)) {
-            addAuxStoredOccurrences(chunk_id, peer_id);
-            return false;
-        }
-
-        //already add that peer as a owner of a stored chunk
-        if(stored_chunks_occurrences.get(chunk_id).second.contains(peer_id))
-            return true;
-
-        stored_chunks_occurrences.get(chunk_id).second.add(peer_id);
-        return true;
-    }
-
-    public boolean hasReplicationDegree(String chunk_id) {
-        return (checkStoredChunksOccurrences(chunk_id) >= this.stored_chunks_occurrences.get(chunk_id).first);
-    }
-
-    public boolean hasMoreThanReplicationDegree(String chunk_id) {
-        return (checkStoredChunksOccurrences(chunk_id) > this.stored_chunks_occurrences.get(chunk_id).first);
-    }
-
-    public Integer getReplicationDegree(String chunk_id) {
-        if(!this.stored_chunks_occurrences.containsKey(chunk_id))
-            return -1;
-        return this.stored_chunks_occurrences.get(chunk_id).first;
-    }
-
-    public Integer checkStoredChunksOccurrences(String chunk_id) {
+    public BigInteger getKey(String chunk_id) {
         if(this.stored_chunks_occurrences.get(chunk_id) != null)
-            return this.stored_chunks_occurrences.get(chunk_id).second.size();
+            return this.stored_chunks_occurrences.get(chunk_id);
 
-        return -1;
-    }
-
-    public void removeStoredChunkOccurrence(String chunk_id, BigInteger peer_id) {
-        Pair<Integer,ArrayList<BigInteger>> value = this.stored_chunks_occurrences.get(chunk_id);
-
-        if(value != null ){
-            ArrayList<BigInteger> peersList = value.second;
-            peersList.remove(peer_id);
-            Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
-            this.stored_chunks_occurrences.replace(chunk_id, pair);
-        }
-
+        return null;
     }
 
     public void removeStoredChunksOccurrences(String chunk_id) {
         this.stored_chunks_occurrences.remove(chunk_id);
-    }
-
-    //---------------------------- BACKUP ENHANCEMENT AUXILIARY HASHMAP ----------------------------------
-    private void addAuxStoredOccurrences(String chunk_id, BigInteger peer_id) {
-        if(!aux_stored_occurrences.containsKey(chunk_id)) {
-            ArrayList<BigInteger> peers = new ArrayList<>();
-            peers.add(peer_id);
-            aux_stored_occurrences.put(chunk_id, peers);
-        }
-        else if(!aux_stored_occurrences.get(chunk_id).contains(peer_id)){
-            aux_stored_occurrences.get(chunk_id).add(peer_id);
-        }
-    }
-    public int checkAuxStoredOccurrences(String chunk_id) {
-        if(aux_stored_occurrences.containsKey(chunk_id)){
-            return aux_stored_occurrences.get(chunk_id).size();
-        }
-        else return -1;
-    }
-
-    public void removeAuxStoredOccurrences(String chunk_id) {
-        if(aux_stored_occurrences.containsKey(chunk_id))
-            aux_stored_occurrences.remove(chunk_id);
     }
 
 
@@ -357,17 +292,17 @@ public class Store {
     }
 
     //returns true in case there
-    public boolean addBackupChunksOccurrences(String chunk_id, BigInteger peer_id) {
+    public boolean addBackupChunksOccurrences(String chunk_id, BigInteger key) {
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
             Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
 
-            if(pair.second.contains(peer_id))
+            if(pair.second.contains(key))
                 return false;
 
             if(checkBackupChunksOccurrences(chunk_id) >= getBackupChunkReplicationDegree(chunk_id))
                 return true;
 
-            pair.second.add(peer_id);
+            pair.second.add(key);
             this.backup_chunks_occurrences.replace(chunk_id, pair);
 
         }
@@ -384,12 +319,12 @@ public class Store {
         return backup_chunks_occurrences.get(chunk_id).first;
     }
 
-    public void removeBackupChunkOccurrence(String chunk_id, BigInteger peer_id) {
+    public void removeBackupChunkOccurrence(String chunk_id, BigInteger key) {
         Pair<Integer,ArrayList<BigInteger>> value = this.backup_chunks_occurrences.get(chunk_id);
 
         if(value != null ){
             ArrayList<BigInteger> peersList = value.second;
-            peersList.remove(peer_id);
+            peersList.remove(key);
             Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
             this.backup_chunks_occurrences.replace(chunk_id, pair);
         }
