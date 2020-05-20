@@ -22,9 +22,6 @@ public class DeleteProtocol {
         String file_name = FilesListing.getInstance().getFileName(file_id);
         int number = FilesListing.getInstance().get_number_of_chunks(file_name);
 
-        // Remove entry with the file_name and correspond file_id from allFiles
-        FilesListing.getInstance().delete_file_records(file_name, file_id); //no reason to keep them
-
         DeleteMessage deleteMessage = new DeleteMessage(ChordNode.this_node.key, file_id);
         Runnable task = () -> processDelete(deleteMessage, number,0);
         Peer.scheduled_executor.execute(task);
@@ -56,6 +53,7 @@ public class DeleteProtocol {
             return;
         }
 
+        System.out.println("N chunks: " + number_chunks);
         for(int i = 0; i < number_chunks; i++) {
             String chunk_id = file_id + "_" + i;
             ArrayList<BigInteger> keys = Store.getInstance().get_backup_chunks_occurrences(chunk_id);
@@ -63,6 +61,7 @@ public class DeleteProtocol {
                 NodeInfo nodeInfo = ChordNode.findSuccessor(keys.get(j));
                 message.setSender(nodeInfo.key);
                 try {
+                    System.out.println("Hm: " + message.getSender());
                     ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
@@ -100,6 +99,8 @@ public class DeleteProtocol {
     public static DeleteReceivedMessage receiveDelete(DeleteMessage deleteMessage){
         String file_id = deleteMessage.getFileId();
 
+        System.out.println("Received Delete message");
+
         //delete all files and records in stored
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
 
@@ -127,6 +128,7 @@ public class DeleteProtocol {
 
         for(int i = 0; i < number_chunks; i++) {
             NodeInfo nodeInfo = ChordNode.findSuccessor(ChordNode.this_node.key);
+            deleteMessage.setSender(nodeInfo.key);
             try {
                 ChordNode.makeRequest(deleteMessage, nodeInfo.address, nodeInfo.port);
             } catch (IOException | ClassNotFoundException e) {
