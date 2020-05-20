@@ -13,12 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FilesListing implements Serializable {
 
     private static FilesListing filesListing = new FilesListing();
-    private static ConcurrentHashMap<String, Pair<String, Integer>> files = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Pair<String, Integer>> files = new ConcurrentHashMap<>();
 
     //singleton
-    private FilesListing() {
-        getFilesDiskInfo();
-    }
+    private FilesListing() {  }
 
     /**
      * get all files listed
@@ -28,7 +26,7 @@ public class FilesListing implements Serializable {
         return filesListing;
     }
 
-    public static void setInstance(FilesListing filesListing) { FilesListing.filesListing = filesListing; }
+    public static void setInstance(FilesListing fl) { filesListing = fl; }
 
     public String getFileId(String file_name) {
         return files.get(file_name).first;
@@ -104,8 +102,7 @@ public class FilesListing implements Serializable {
      *
      * @return true if successful and false otherwise
      */
-    public static boolean getFilesDiskInfo() {
-
+    public boolean getFilesDiskInfo() {
         //if file is empty there is nothing to have in the concurrentMap
         if (new File(Store.getInstance().getFilesInfoDirectoryPath()).length() == 0) {
             files = new ConcurrentHashMap<>();
@@ -124,7 +121,7 @@ public class FilesListing implements Serializable {
         return true;
     }
 
-    public static ConcurrentHashMap<String, Pair<String, Integer>> getFiles() {
+    public ConcurrentHashMap<String, Pair<String, Integer>> getFiles() {
         return files;
     }
 }
