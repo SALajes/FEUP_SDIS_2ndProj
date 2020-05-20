@@ -31,7 +31,7 @@ public class Peer implements RemoteInterface {
 
     private static String service_access_point;
 
-    public static ScheduledThreadPoolExecutor scheduled_executor = new ScheduledThreadPoolExecutor(20);
+    public static ScheduledThreadPoolExecutor scheduled_executor = new ScheduledThreadPoolExecutor(25);
     public static ExecutorService thread_executor = Executors.newCachedThreadPool();
 
     public static ChordNode node;
@@ -100,12 +100,14 @@ public class Peer implements RemoteInterface {
 
             registry.rebind(service_access_point, stub);
 
-            loadStorage();
+            if(loadStorage()){
+                System.out.println("Storage state loaded from file!");
+            }else{
+                Store.getInstance().initializeStore();
+                FilesListing.getInstance().getFilesDiskInfo();
+            }
 
-            //creates folders
-            Store.getInstance();
-            FilesListing.getInstance();
-
+            scheduled_executor.scheduleAtFixedRate(Peer::saveStorage, 15, 15, TimeUnit.SECONDS);
             Runtime.getRuntime().addShutdownHook(new Thread(Peer::saveStorage));
 
         } catch (Exception e) {
@@ -233,7 +235,7 @@ public class Peer implements RemoteInterface {
 
     private String retrieveBackupState() {
         String state = "|--------- BACKUP --------|\n";
-        ConcurrentHashMap<String, Pair<String, Integer>> files = FilesListing.getFiles();
+        ConcurrentHashMap<String, Pair<String, Integer>> files = FilesListing.getInstance().getFiles();
 
         Iterator it = files.entrySet().iterator();
 
@@ -295,43 +297,53 @@ public class Peer implements RemoteInterface {
         try {
             String storage_file = Peer.id + "_directory/store.ser";
 
-            saveStorageFileHandling(storage_file, true);
+            File file = new File(storage_file);
+            if (!file.exists()) {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            }
+
+            FileOutputStream file_output = new FileOutputStream(storage_file);
+            ObjectOutputStream output = new ObjectOutputStream(file_output);
+            output.writeObject(Store.getInstance());
+            output.close();
+            file_output.close();
 
             String file_listings_file = Peer.id + "_directory/file_listings.ser";
 
-            saveStorageFileHandling(file_listings_file, false);
+            File file2 = new File(file_listings_file);
+            if (!file2.exists()) {
+                file2.getParentFile().mkdirs();
+                file2.createNewFile();
+            }
+
+            FileOutputStream file_output2 = new FileOutputStream(file_listings_file);
+            ObjectOutputStream output2 = new ObjectOutputStream(file_output2);
+            output2.writeObject(FilesListing.getInstance());
+            output2.close();
+            file_output2.close();
+
+            System.out.println("State saved!");
 
         } catch (IOException i) {
             i.printStackTrace();
         }
     }
 
-    private static void saveStorageFileHandling(String file_name, boolean storage) throws IOException {
-
-        File file = new File(file_name);
-        if (!file.exists()) {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-        }
-
-        FileOutputStream file_output = new FileOutputStream(file_name);
-        ObjectOutputStream output = new ObjectOutputStream(file_output);
-        if(storage){
-            output.writeObject(Store.getInstance());
-        }else{
-            output.writeObject(FilesListing.getInstance());
-        }
-        output.close();
-        file_output.close();
-    }
-
-    private static void loadStorage() {
+    private static boolean loadStorage() {
         try {
             String storage_file = Peer.id + "_directory/store.ser";
 
             File file = new File(storage_file);
             if (!file.exists()) {
-                return;
+                return false;
+            }
+
+            String file_listings_file = Peer.id + "_directory/file_listings.ser";
+
+            File file2 = new File(file_listings_file);
+            if (!file2.exists()) {
+                return false;
             }
 
             FileInputStream storage_file_input = new FileInputStream(storage_file);
@@ -340,12 +352,6 @@ public class Peer implements RemoteInterface {
             storage_input.close();
             storage_file_input.close();
 
-            String file_listings_file = Peer.id + "_directory/file_listings.ser";
-
-            File file2 = new File(file_listings_file);
-            if (!file2.exists()) {
-                return;
-            }
 
             FileInputStream listing_file_input = new FileInputStream(file_listings_file);
             ObjectInputStream listing_input = new ObjectInputStream(listing_file_input);
@@ -355,7 +361,9 @@ public class Peer implements RemoteInterface {
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 
 

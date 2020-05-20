@@ -28,12 +28,12 @@ public class Store implements Serializable {
     //used for delete_enhancement, key file_id and value list of peers
     private ConcurrentHashMap<String, ArrayList<BigInteger>> not_deleted = new ConcurrentHashMap<>();
 
-    private static String peer_directory_path;
-    private static String files_directory_path;
-    private static String files_info_directory_path;
-    private static String store_directory_path;
-    private static String store_info_directory_path;
-    private static String restored_directory_path;
+    private String peer_directory_path;
+    private String files_directory_path;
+    private String files_info_directory_path;
+    private String store_directory_path;
+    private String store_info_directory_path;
+    private String restored_directory_path;
 
     private long occupied_storage = 0; //in bytes
     private long storage_capacity = Macros.INITIAL_STORAGE;
@@ -42,9 +42,7 @@ public class Store implements Serializable {
     /**
      * creates the four needed directory
      */
-    private Store() {
-        initializeStore();
-    }
+    private Store() { }
 
     /**
      * creates the four needed directory
@@ -71,7 +69,7 @@ public class Store implements Serializable {
         return store;
     }
 
-    public static void setInstance(Store storage) { Store.store = storage; }
+    public static void setInstance(Store storage) { store = storage; }
 
 
     // ---------------------------------------------- RECLAIM -----------------------------------
