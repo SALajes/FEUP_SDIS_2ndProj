@@ -12,11 +12,10 @@ public class MessageHandler {
                     break;
                 case DELETE:
                     return DeleteProtocol.receiveDelete((DeleteMessage) message);
-                case DELETE_RECEIVED:
-                    DeleteProtocol.receiveDeleteReceived((DeleteReceivedMessage) message);
-                    break;
                 case REMOVED:
                     return ReclaimProtocol.receiveRemoved((RemovedMessage) message);
+                case CONNECTION_REQUEST:
+                    return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
                 case REQUEST_PREDECESSOR:
                     return ConnectionProtocol.receiveRequestPredecessor((RequestPredecessorMessage) message);
                 case FIND_PREDECESSOR:
@@ -29,17 +28,16 @@ public class MessageHandler {
                     return ConnectionProtocol.receivedStabilize();
                 case DISCONNECT:
                     return ConnectionProtocol.receivedDisconnectMessage((DisconnectMessage) message);
-                case CONNECTION_REQUEST:
-                    return ConnectionProtocol.receiveRequest((ConnectionRequestMessage) message);
-                case MOCK:
                 case CHUNK:
                 case STORED:
-                case STABILIZE_RESPONSE:
-                case SUCCESSOR_RESPONSE:
-                case SUCCESSOR:
-                case PREDECESSOR:
+                case DELETE_RECEIVED:
                 case CONNECTION_RESPONSE:
                 case PREDECESSOR_RESPONSE:
+                case SUCCESSOR_RESPONSE:
+                case PREDECESSOR:
+                case SUCCESSOR:
+                case STABILIZE_RESPONSE:
+                case MOCK:
                     return message;
                 default:
                     break;

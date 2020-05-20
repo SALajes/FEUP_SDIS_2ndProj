@@ -39,11 +39,14 @@ public class ReclaimProtocol {
 
     public static void processRemoveMessage(RemovedMessage message) {
         //sends to the peer initiator
-        NodeInfo nodeInfo = ChordNode.findPredecessor(Store.getInstance().getKey(message.getFileId()));
-        try {
-            ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+        BigInteger chunk_owner = Store.getInstance().getKeyOfStoredChunk(message.getFileId());
+        NodeInfo nodeInfo = ChordNode.findSuccessor(chunk_owner);
+        if(chunk_owner.equals(nodeInfo.key)) {
+            try {
+                ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 

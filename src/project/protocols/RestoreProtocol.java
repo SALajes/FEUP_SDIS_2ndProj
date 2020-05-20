@@ -16,16 +16,16 @@ import java.util.ArrayList;
 
 public class RestoreProtocol {
     // --------- peer initiator
-    public static void sendGetChunk(String file_id, int number_of_chunks){
+    public static void processGetChunk(String file_id, int number_of_chunks){
         for (int i = 0; i < number_of_chunks; i++) {
             int chunk_no = i;
-            Runnable task = () -> processGetChunk(file_id, chunk_no);
+            Runnable task = () -> sendGetChunk(file_id, chunk_no);
             Peer.thread_executor.execute(task);
         }
     }
 
-    public static void processGetChunk(String file_id, int chunk_no){
-        ArrayList<BigInteger> peers = Store.getInstance().get_backup_chunks_occurrences(file_id + "_" + chunk_no);
+    public static void sendGetChunk(String file_id, int chunk_no){
+        ArrayList<BigInteger> peers = Store.getInstance().getBackupChunksOccurrences(file_id + "_" + chunk_no);
 
         for(int i=0; i < peers.size(); i++){
             NodeInfo nodeInfo = ChordNode.findSuccessor(peers.get(i));

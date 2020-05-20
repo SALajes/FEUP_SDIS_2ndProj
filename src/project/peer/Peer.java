@@ -14,6 +14,7 @@ import project.InvalidFileException;
 import project.Macros;
 
 import project.chunk.ChunkFactory;
+import project.chunk.StoredChunks;
 import project.message.InvalidMessageException;
 import project.protocols.BackupProtocol;
 import project.protocols.DeleteProtocol;
@@ -137,7 +138,7 @@ public class Peer implements RemoteInterface {
 
         String file_id = FileManager.createFileId(file);
         int number_of_chunks = (int) Math.ceil((float) file.length() / Macros.CHUNK_MAX_SIZE );
-        FilesListing.getInstance().add_file(file.getName(), file_id, number_of_chunks);
+        FilesListing.getInstance().addFile(file.getName(), file_id, number_of_chunks);
 
         ChunkFactory chunkFactory = new ChunkFactory(file, replication_degree);
         BackupProtocol.processPutchunk(replication_degree, file_id, chunkFactory.getChunks());
@@ -165,9 +166,9 @@ public class Peer implements RemoteInterface {
 
         FileManager.createEmptyFileForRestoring( file_name );
 
-        int number_of_chunks = FilesListing.getInstance().get_number_of_chunks(file_name);
+        int number_of_chunks = FilesListing.getInstance().getNumberOfChunks(file_name);
 
-        RestoreProtocol.sendGetChunk(file_id, number_of_chunks);
+        RestoreProtocol.processGetChunk(file_id, number_of_chunks);
 
         Store.getInstance().addRestoredFile(file_id, file_name);
 
@@ -192,7 +193,7 @@ public class Peer implements RemoteInterface {
         }
 
         //sends message DELETE to all peers
-        DeleteProtocol.sendDelete(file_id);
+        DeleteProtocol.processDelete(file_id);
 
         return 0;
     }
@@ -234,7 +235,7 @@ public class Peer implements RemoteInterface {
 
     private String retrieveBackupState() {
         String state = "|--------- BACKUP --------|\n";
-        ConcurrentHashMap<String, Pair<String, Integer>> files = FilesListing.get_files();
+        ConcurrentHashMap<String, Pair<String, Integer>> files = FilesListing.getFiles();
 
         Iterator it = files.entrySet().iterator();
 
@@ -263,7 +264,7 @@ public class Peer implements RemoteInterface {
     private String retrieveStoredChunksState() {
         String state = "|----- STORED CHUNKS -----|\n";
 
-        ConcurrentHashMap<String, Pair<Integer, ArrayList<Integer>>> stored_chunks = Store.getInstance().getStoredChunks();
+        ConcurrentHashMap<String, StoredChunks> stored_chunks = Store.getInstance().getStoredChunks();
         Iterator it = stored_chunks.entrySet().iterator();
 
         while(it.hasNext()) {
@@ -276,7 +277,7 @@ public class Peer implements RemoteInterface {
             for(Integer chunk_no : pair.second){
                 state = state + "   id: " + chunk_no + "\n"
                         + "      size: " + FileManager.retrieveChunkSize(file_id, chunk_no) + "\n"
-                        + "      for peer with key: " + Store.getInstance().getKey(file_id + "_" + chunk_no) + "\n";
+                        + "      for peer with key: " + Store.getInstance().getKeyOfStoredChunk((file_id + "_" + chunk_no)) + "\n";
             }
         }
 

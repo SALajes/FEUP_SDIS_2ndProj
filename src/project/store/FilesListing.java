@@ -17,7 +17,7 @@ public class FilesListing implements Serializable {
 
     //singleton
     private FilesListing() {
-        get_files_disk_info();
+        getFilesDiskInfo();
     }
 
     /**
@@ -51,25 +51,21 @@ public class FilesListing implements Serializable {
         return null;
     }
 
-    public Integer get_number_of_chunks(String file_name) {
-        return files.get(file_name).second;
-    }
-
-    public void add_file(String file_name, String file_id, Integer number_of_chunks) {
+    public void addFile(String file_name, String file_id, Integer number_of_chunks) {
 
         //put returns the previous value associated with key, or null if there was no mapping for key
         Pair<String, Integer> pair = files.put(file_name, new Pair<>(file_id, number_of_chunks));
 
         if (pair != null) {
             //backing up a file with the same name that wasn't change
-            if(pair.first.equals(file_id)) {
+            if(!pair.first.equals(file_id)) {
                 System.out.println("This file_name already exists, the content will be updated.");
 
                 //deletes the older file
                 System.out.println("Deleting " + pair.second + " chunks from the out of date file");
 
                 //deletes file from network storage
-                DeleteProtocol.sendDelete(file_id);
+                DeleteProtocol.processDelete(file_id);
 
                 //deletes own files with chunks of the file in the 3 folders ( files, stored, restored)
                 FileManager.deleteFilesFolders(pair.first);
@@ -79,17 +75,12 @@ public class FilesListing implements Serializable {
             }
         }
 
-        set_files_disk_info();
+        setFilesDiskInfo();
     }
 
-    public void delete_file_records(String file_name, String file_id) {
-        int number_of_chunks = getNumberOfChunks(file_name);
-
-        for(int i = 0; i < number_of_chunks; i++)
-            Store.getInstance().removeBackupChunksOccurrences(file_id + "_" + i);
-
+    public void deleteFileRecords(String file_name) {
         files.remove(file_name);
-        set_files_disk_info();
+        setFilesDiskInfo();
     }
 
 
@@ -97,7 +88,7 @@ public class FilesListing implements Serializable {
      * changes the content of the file to contain this current object
      * @return true if successful and false otherwise
      */
-    public boolean set_files_disk_info() {
+    public boolean setFilesDiskInfo() {
         try {
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(Store.getInstance().getFilesInfoDirectoryPath()));
             objectOutputStream.writeObject(this);
@@ -113,7 +104,7 @@ public class FilesListing implements Serializable {
      *
      * @return true if successful and false otherwise
      */
-    public static boolean get_files_disk_info() {
+    public static boolean getFilesDiskInfo() {
 
         //if file is empty there is nothing to have in the concurrentMap
         if (new File(Store.getInstance().getFilesInfoDirectoryPath()).length() == 0) {
@@ -133,7 +124,7 @@ public class FilesListing implements Serializable {
         return true;
     }
 
-    public static ConcurrentHashMap<String, Pair<String, Integer>> get_files() {
+    public static ConcurrentHashMap<String, Pair<String, Integer>> getFiles() {
         return files;
     }
 }

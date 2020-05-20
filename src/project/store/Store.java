@@ -2,6 +2,7 @@ package project.store;
 
 import project.Macros;
 import project.Pair;
+import project.chunk.StoredChunks;
 import project.peer.Peer;
 
 import java.io.Serializable;
@@ -16,9 +17,7 @@ public class Store implements Serializable {
     private static Store store = new Store();
 
     //state of others chunks
-    private ConcurrentHashMap<String, Pair<Integer, ArrayList<Integer>>> stored_chunks = new ConcurrentHashMap<>();
-    //saves the file_id and the peer key that asks to save
-    private ConcurrentHashMap<String, BigInteger> stored_chunks_occurrences = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, StoredChunks> stored_chunks = new ConcurrentHashMap<>();
 
     //state of restored files - key file_id - value file_name
     private Hashtable<String, String> restored_files = new Hashtable<>();
@@ -100,7 +99,7 @@ public class Store implements Serializable {
             // Getting Key
             file_id = itr.next();
 
-            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).second);
+            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).getChunkNumbers());
 
             for(Integer chunk_number : chunks_nos) {
                 FileManager.removeChunk(file_id, chunk_number);
@@ -112,8 +111,8 @@ public class Store implements Serializable {
         }
     }
 
-    public int getReplicationDegree(String chunk_id) {
-        return stored_chunks.get(chunk_id).first;
+    public int getReplicationDegree(String file_id) {
+        return stored_chunks.get(file_id).getReplication_degree();
     }
 
     /**
@@ -132,7 +131,7 @@ public class Store implements Serializable {
             // Getting Key
             file_id = itr.next();
 
-            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).second);
+            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).getChunkNumbers());
 
             for(Integer chunk_number : chunks_nos) {
                 FileManager.removeChunk(file_id, chunk_number);
@@ -176,33 +175,32 @@ public class Store implements Serializable {
 
     // --------------------- STORED CHUNKS ----------------------------
 
-    public ConcurrentHashMap<String, Pair<Integer, ArrayList<Integer>>> getStoredChunks() {
+    public ConcurrentHashMap<String, StoredChunks> getStoredChunks() {
         return stored_chunks;
     }
 
-    public synchronized void addStoredChunk(String file_id, int chunk_number, Integer replicationDegree, long chunk_length, BigInteger key) {
+    public synchronized void addStoredChunk(BigInteger key, String file_id, int chunk_number, Integer replicationDegree, long chunk_length) {
 
         if(!stored_chunks.containsKey(file_id)) {
             ArrayList<Integer> chunks_stored = new ArrayList<>();
             chunks_stored.add(chunk_number);
-            Pair pair = new Pair<>(replicationDegree, chunks_stored);
-            stored_chunks.put(file_id, pair);
+            stored_chunks.put(file_id, new StoredChunks(key, replicationDegree, chunks_stored));
 
             //update the current space used for storage
             AddOccupiedStorage(chunk_length);
-
-            addStoredChunksOccurrences(file_id, chunk_number, key);
         }
         else if(!checkStoredChunk(file_id, chunk_number)) {
-            Pair<Integer, ArrayList<Integer>> pair = stored_chunks.get(file_id);
-            pair.second.add(chunk_number);
-            stored_chunks.replace(file_id, pair);
+            StoredChunks chunks = stored_chunks.get(file_id);
+            chunks.addChunkNumber(chunk_number);
+            stored_chunks.replace(file_id, chunks);
 
             //update the current space used for storage
             AddOccupiedStorage(chunk_length);
-
-            addStoredChunksOccurrences(file_id, chunk_number, key);
         }
+    }
+
+    public BigInteger getKeyOfStoredChunk(String file_id) {
+        return stored_chunks.get(file_id).getOwner();
     }
 
     /**
@@ -212,32 +210,23 @@ public class Store implements Serializable {
      * @return true if exists and false otherwise
      */
     public boolean checkStoredChunk(String file_id, int chunk_no){
-        //System.out.println("\nSTORED CHUNKS: " + stored_chunks.size());
         if(stored_chunks.containsKey(file_id)) {
-            //System.out.println(file_id + " STORED CHUNKS: " + stored_chunks.get(file_id).second.toString());
-
-            return stored_chunks.get(file_id).second.contains(chunk_no);
+            return stored_chunks.get(file_id).getChunkNumbers().contains(chunk_no);
         }
         else return false;
     }
 
-    public int number_of_chunks(String file_id) {
-        return stored_chunks.get(file_id).second.size();
-    }
-
     public void removeStoredChunk(String file_id, Integer chunk_number) {
-
         if(stored_chunks.containsKey(file_id)) {
-            Pair<Integer, ArrayList<Integer>> pair = stored_chunks.get(file_id);
+            StoredChunks chunks = stored_chunks.get(file_id);
 
-            stored_chunks_occurrences.remove(file_id + "_" + chunk_number);
-            if(stored_chunks.get(file_id).second.size() == 1) {
+            if(chunks.getChunkNumbers().size() == 1) {
                 System.out.println("No more chunks of that file, removing folder of file " + file_id);
                 stored_chunks.remove(file_id);
                 FileManager.deleteFileFolder( this.getStoreDirectoryPath() + file_id);
             } else {
-                pair.second.remove(chunk_number);
-                stored_chunks.replace(file_id, pair);
+                chunks.removeChunkNumber(chunk_number);
+                stored_chunks.replace(file_id, chunks);
             }
         }
     }
@@ -246,48 +235,17 @@ public class Store implements Serializable {
         if(!stored_chunks.containsKey(file_id)) {
             return false;
         }
-        ArrayList<Integer> chunk_nos = new ArrayList<>(stored_chunks.get(file_id).second);
+        ArrayList<Integer> chunk_nos = stored_chunks.get(file_id).getChunkNumbers();
 
         if(chunk_nos.size() == 0) {
             return false;
         }
 
-        for(Integer chunk_number : chunk_nos) {
-            stored_chunks_occurrences.remove(file_id + "_" + chunk_number);
-        }
-
         stored_chunks.remove(file_id);
         return true;
     }
-
-    //-------------------- Stored Chunks Occurrences ------------------
-
-    /**
-     * add an entry to the stored_chunks_occurrences
-     * @param file_id encoded
-     * @param chunk_number number of the chunk
-     * @param key key of the peer initiato
-     */
-    private void addStoredChunksOccurrences(String file_id, int chunk_number, BigInteger key) {
-        ArrayList<Integer> occurrences = new ArrayList<>();
-        occurrences.add(Peer.id);
-        stored_chunks_occurrences.put(file_id + "_" + chunk_number, key );
-        System.out.println(Peer.id + " add stored chunk " + chunk_number + " of file " + file_id);
-    }
-
-    public BigInteger getKey(String chunk_id) {
-        if(this.stored_chunks_occurrences.get(chunk_id) != null)
-            return this.stored_chunks_occurrences.get(chunk_id);
-
-        return null;
-    }
-
-    public void removeStoredChunksOccurrences(String chunk_id) {
-        this.stored_chunks_occurrences.remove(chunk_id);
-    }
-
-
     //---------------------------- BACKUP CHUNKS ----------------------------------
+
     public void newBackupChunk(String chunk_id, int replication_degree) {
 
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
@@ -300,8 +258,8 @@ public class Store implements Serializable {
         else this.backup_chunks_occurrences.put(chunk_id, new Pair<>(replication_degree, new ArrayList<>()));
 
     }
-
     //returns true in case there
+
     public boolean addBackupChunksOccurrences(String chunk_id, BigInteger key) {
         if(this.backup_chunks_occurrences.containsKey(chunk_id)){
             Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
@@ -314,7 +272,6 @@ public class Store implements Serializable {
 
             pair.second.add(key);
             this.backup_chunks_occurrences.replace(chunk_id, pair);
-
         }
         return false;
     }
@@ -335,18 +292,22 @@ public class Store implements Serializable {
         if(value != null ){
             ArrayList<BigInteger> peersList = value.second;
             peersList.remove(key);
-            Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
-            this.backup_chunks_occurrences.replace(chunk_id, pair);
+
+            if(peersList.size() > 0) {
+                Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
+                this.backup_chunks_occurrences.replace(chunk_id, pair);
+            }
+            else this.backup_chunks_occurrences.remove(chunk_id);
         }
 
     }
 
-    public ArrayList<BigInteger> get_backup_chunks_occurrences(String chunk_id) {
-        return backup_chunks_occurrences.get(chunk_id).second;
-    }
-
     public void removeBackupChunksOccurrences(String chunk_id) {
         this.backup_chunks_occurrences.remove(chunk_id);
+    }
+
+    public ArrayList<BigInteger> getBackupChunksOccurrences(String chunk_id) {
+        return backup_chunks_occurrences.get(chunk_id).second;
     }
 
     public void verifyBackupChunks(BigInteger key) {
@@ -357,7 +318,7 @@ public class Store implements Serializable {
 
     public boolean checkIfAllDeleted(String file_id){
         String file_name = FilesListing.getInstance().getFileName(file_id);
-        Integer number_of_chunks = FilesListing.getInstance().get_number_of_chunks(file_name);
+        Integer number_of_chunks = FilesListing.getInstance().getNumberOfChunks(file_name);
 
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
@@ -372,7 +333,7 @@ public class Store implements Serializable {
 
     public void changeFromBackupToDelete(String file_id) {
         String file_name = FilesListing.getInstance().getFileName(file_id);
-        Integer number_of_chunks = FilesListing.getInstance().get_number_of_chunks(file_name);
+        Integer number_of_chunks = FilesListing.getInstance().getNumberOfChunks(file_name);
 
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;

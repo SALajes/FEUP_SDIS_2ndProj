@@ -336,11 +336,11 @@ public class FileManager {
      * @param replicationDegree wanted replication degree
      * @return true if successful or false otherwise
      */
-    public synchronized static boolean storeChunk(String file_id, int chunk_number, byte[] chunk_body, Integer replicationDegree, BigInteger key){
-        return storeChunk(file_id, chunk_number, chunk_body, replicationDegree, true, key);
+    public synchronized static boolean storeChunk(BigInteger key, String file_id, int chunk_number, byte[] chunk_body, Integer replicationDegree){
+        return storeChunk(key, file_id, chunk_number, chunk_body, replicationDegree, true);
     }
 
-    public synchronized static boolean storeChunk(String file_id, int chunk_number, byte[] chunk_body, Integer replicationDegree, Boolean check_conditions, BigInteger key) {
+    public synchronized static boolean storeChunk(BigInteger key, String file_id, int chunk_number, byte[] chunk_body, Integer replicationDegree, Boolean check_conditions) {
         if(check_conditions){
             Boolean x = checkConditionsForSTORED(file_id, chunk_number, chunk_body.length);
             if (x != null) return x;
@@ -380,7 +380,7 @@ public class FileManager {
         channel.write(buffer, 0, "", handler);
 
 
-        Store.getInstance().addStoredChunk(file_id, chunk_number, replicationDegree, chunk_body.length, key);
+        Store.getInstance().addStoredChunk(key, file_id, chunk_number, replicationDegree, chunk_body.length);
 
         return true;
     }

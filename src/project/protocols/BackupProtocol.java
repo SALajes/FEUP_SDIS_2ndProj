@@ -47,7 +47,7 @@ public class BackupProtocol  {
         }
     }
 
-    public static StoredMessage sendPutchunk(PutChunkMessage message, int rep_degree) {
+    public static void sendPutchunk(PutChunkMessage message, int rep_degree) {
         for(int tries = 0; tries < 5; tries++) {
             try {
                 NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
@@ -57,24 +57,20 @@ public class BackupProtocol  {
 
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
 
-                if(stored.getStatus().equals(Macros.FAIL))
-                    continue;
-                else {
+                if(stored.getStatus().equals(Macros.SUCCESS)) {
                     receiveStored(stored);
-                    return stored;
+                    return;
                 }
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         }
         System.out.println("Could not backup chunk " + message.getFileId() + "_" + message.getChunkNo() + " (" + rep_degree + ")");
-        return null;
     }
 
     public static void receiveStored(StoredMessage stored){
         String chunk_id = stored.getFileId() + "_" + stored.getChunkNo();
         BigInteger key = stored.getSender();
-
         Store.getInstance().addBackupChunksOccurrences(chunk_id, key);
     }
 
@@ -85,21 +81,21 @@ public class BackupProtocol  {
 
         //check if this is this peer with a file
         if(Store.getInstance().checkBackupChunksOccurrences(file_id + "_" + putchunk.getChunkNo()) != -1) {
-            return sendStored(putchunk, Macros.FAIL, ChordNode.this_node.key);
+            return sendStored(putchunk, Macros.FAIL);
         }
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
-            return sendStored(putchunk, Macros.SUCCESS, ChordNode.this_node.key);
+            return sendStored(putchunk, Macros.SUCCESS);
         }
-        else return sendStored(putchunk, Macros.FAIL, ChordNode.this_node.key);
+        else return sendStored(putchunk, Macros.FAIL);
     }
 
-    private static StoredMessage sendStored(PutChunkMessage putchunk, String status, BigInteger key) {
+    private static StoredMessage sendStored(PutChunkMessage putchunk, String status) {
         int chunkNo = putchunk.getChunkNo();
         String fileId = putchunk.getFileId();
 
-        FileManager.storeChunk(fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false, key);
+        FileManager.storeChunk(putchunk.getSender(), fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
         StoredMessage message = new StoredMessage(ChordNode.this_node.key, fileId,  chunkNo, status);
         return message;
     }
