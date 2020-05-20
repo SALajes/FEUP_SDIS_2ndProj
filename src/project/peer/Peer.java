@@ -180,7 +180,7 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public int delete(String file_path) throws InvalidFileException {
-        final String file_name = new File(file_path).getName();
+        final String file_name = new File(file_path).getName();«
 
         //gets the file_id from the entry with key file_name form allFiles
         String file_id;

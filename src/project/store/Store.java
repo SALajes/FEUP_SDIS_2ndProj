@@ -239,6 +239,11 @@ public class Store implements Serializable {
     }
 
     public boolean removeStoredChunks(String file_id){
+
+        if(stored_chunks.get(file_id) == null){
+            return false;
+        }
+
         ArrayList<Integer> chunk_nos = new ArrayList<>(stored_chunks.get(file_id).second);
 
         if(chunk_nos.size() == 0) {
@@ -253,13 +258,20 @@ public class Store implements Serializable {
         return true;
     }
 
+    public void removeFilePeerInfo(String file_id, int num_chunks){
+        for(int i = 0; i < num_chunks; i++) {
+            String chunk_id = file_id + "_" + i;
+            backup_chunks_occurrences.remove(chunk_id);
+        }
+    }
+
     //-------------------- Stored Chunks Occurrences ------------------
 
     /**
      * add an entry to the stored_chunks_occurrences
      * @param file_id encoded
      * @param chunk_number number of the chunk
-     * @param key key of the peer initiato
+     * @param key key of the peer initiator
      */
     private void addStoredChunksOccurrences(String file_id, int chunk_number, BigInteger key) {
         ArrayList<Integer> occurrences = new ArrayList<>();

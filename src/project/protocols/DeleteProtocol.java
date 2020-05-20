@@ -55,7 +55,7 @@ public class DeleteProtocol {
             String chunk_id = file_id + "_" + i;
             ArrayList<BigInteger> keys = Store.getInstance().get_backup_chunks_occurrences(chunk_id);
             for(int j= 0; j < keys.size(); j++) {
-                NodeInfo nodeInfo = ChordNode.findPredecessor(keys.get(j));
+                NodeInfo nodeInfo = ChordNode.findSuccessor(keys.get(j));
                 message.setSender(nodeInfo.key);
                 try {
                     ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
@@ -103,7 +103,6 @@ public class DeleteProtocol {
             Runnable task = () -> processDelete(deleteMessage, file_id, 0);
             Peer.scheduled_executor.execute(task);
         }
-
         //sends with is key of the chord
         return new DeleteReceivedMessage(deleteMessage.getSender(), file_id);
 

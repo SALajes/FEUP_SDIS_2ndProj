@@ -74,6 +74,8 @@ public class FilesListing implements Serializable {
 
             //old file is ours so unregister chunks of the file
             Store.getInstance().removeStoredChunks(pair.first);
+
+            //Store.getInstance().removeFilePeerInfo(pair.first, pair.second);
         }
 
         set_files_disk_info();
