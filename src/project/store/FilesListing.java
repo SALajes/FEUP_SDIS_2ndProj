@@ -61,21 +61,22 @@ public class FilesListing implements Serializable {
         Pair<String, Integer> pair = files.put(file_name, new Pair<>(file_id, number_of_chunks));
 
         if (pair != null) {
-            System.out.println("This file_name already exists, the content will be updated.");
+            //backing up a file with the same name that wasn't change
+            if(pair.first.equals(file_id)) {
+                System.out.println("This file_name already exists, the content will be updated.");
 
-            //deletes the older file
-            System.out.println("Deleting " + pair.second + " chunks from the out of date file");
+                //deletes the older file
+                System.out.println("Deleting " + pair.second + " chunks from the out of date file");
 
-            //deletes file from network storage
-            DeleteProtocol.sendDelete( file_id );
+                //deletes file from network storage
+                DeleteProtocol.sendDelete(file_id);
 
-            //deletes own files with chunks of the file in the 3 folders ( files, stored, restored)
-            FileManager.deleteFilesFolders(pair.first);
+                //deletes own files with chunks of the file in the 3 folders ( files, stored, restored)
+                FileManager.deleteFilesFolders(pair.first);
 
-            //old file is ours so unregister chunks of the file
-            Store.getInstance().removeStoredChunks(pair.first);
-
-            //Store.getInstance().removeFilePeerInfo(pair.first, pair.second);
+                //old file is ours so unregister chunks of the file
+                Store.getInstance().removeStoredChunks(pair.first);
+            }
         }
 
         set_files_disk_info();

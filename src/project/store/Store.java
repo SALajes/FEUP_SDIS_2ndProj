@@ -221,6 +221,10 @@ public class Store implements Serializable {
         else return false;
     }
 
+    public int number_of_chunks(String file_id) {
+        return stored_chunks.get(file_id).second.size();
+    }
+
     public void removeStoredChunk(String file_id, Integer chunk_number) {
 
         if(stored_chunks.containsKey(file_id)) {
@@ -239,11 +243,9 @@ public class Store implements Serializable {
     }
 
     public boolean removeStoredChunks(String file_id){
-
-        if(stored_chunks.get(file_id) == null){
+        if(!stored_chunks.containsKey(file_id)) {
             return false;
         }
-
         ArrayList<Integer> chunk_nos = new ArrayList<>(stored_chunks.get(file_id).second);
 
         if(chunk_nos.size() == 0) {
