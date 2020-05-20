@@ -244,6 +244,14 @@ public class Store implements Serializable {
         stored_chunks.remove(file_id);
         return true;
     }
+
+    public void removeFilePeerInfo(String file_id, int num_chunks){
+        for(int i = 0; i < num_chunks; i++) {
+            String chunk_id = file_id + "_" + i;
+            backup_chunks_occurrences.remove(chunk_id);
+        }
+    }
+
     //---------------------------- BACKUP CHUNKS ----------------------------------
 
     public void newBackupChunk(String chunk_id, int replication_degree) {

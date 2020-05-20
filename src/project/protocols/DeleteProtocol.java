@@ -64,6 +64,8 @@ public class DeleteProtocol {
     public static DeleteReceivedMessage receiveDelete(DeleteMessage deleteMessage){
         String file_id = deleteMessage.getFileId();
 
+        System.out.println("Received Delete message");
+
         //delete all files and records in stored
         FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
 
@@ -71,7 +73,7 @@ public class DeleteProtocol {
             System.out.println("Remove file records");
         }
 
-        return new DeleteReceivedMessage(deleteMessage.getSender(), file_id);
+        return new DeleteReceivedMessage(ChordNode.this_node.key, file_id);
     }
 
     public static void receiveDeleteReceived(DeleteReceivedMessage message, int number_of_chunks) {
