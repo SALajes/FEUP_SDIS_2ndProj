@@ -29,7 +29,6 @@ public class RestoreProtocol {
 
         for(int i=0; i < peers.size(); i++){
             NodeInfo nodeInfo = ChordNode.findSuccessor(peers.get(i));
-            System.out.println("RESULT: " + nodeInfo.key + " ; Looked for: " + peers.get(i));
             if(nodeInfo.key.equals(peers.get(i))){
                 GetChunkMessage message = new GetChunkMessage(nodeInfo.key, file_id, chunk_no);
                 try {
@@ -73,8 +72,6 @@ public class RestoreProtocol {
     }
 
     public static ChunkMessage sendChunk(String status, String file_id, Integer chunk_no, byte[] chunk_data){
-        ChunkMessage chunk = new ChunkMessage(ChordNode.this_node.key, status, file_id, chunk_no, chunk_data);
-        System.out.println("SENDING CHUNK: " + new String(chunk.convertMessage()));
-        return chunk;
+        return new ChunkMessage(ChordNode.this_node.key, status, file_id, chunk_no, chunk_data);
     }
 }

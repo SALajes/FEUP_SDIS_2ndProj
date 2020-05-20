@@ -8,8 +8,7 @@ public class MessageHandler {
                 case PUTCHUNK:
                     return BackupProtocol.receivePutchunk((PutChunkMessage) message);
                 case GETCHUNK:
-                    RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
-                    break;
+                    return RestoreProtocol.receiveGetChunk((GetChunkMessage) message);
                 case DELETE:
                     return DeleteProtocol.receiveDelete((DeleteMessage) message);
                 case REMOVED:

@@ -80,12 +80,6 @@ public class ChordNode {
     }
 
     private void verifyState(){
-        System.out.println("THIS NODE: " + this_node.key);
-        System.out.println("SUCCESSOR: " + getSuccessorNode().key);
-        if(predecessor!=null)
-            System.out.println("PREDECESSOR: " + predecessor.key);
-        System.out.println("MOCKITO");
-
         Peer.thread_executor.execute(this::stabilize);
         Peer.thread_executor.execute(this::verifyPredecessor);
         Peer.thread_executor.execute(this::updateFingerTable);
@@ -145,9 +139,7 @@ public class ChordNode {
     }
 
     private void updateTableEntry(int entry, BigInteger key){
-       // System.out.println(entry + "   " + key);
         NodeInfo node = findSuccessor(key);
-        //System.out.println(entry + " success");
         if(node == null)
             return;
 

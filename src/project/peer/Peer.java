@@ -84,7 +84,7 @@ public class Peer implements RemoteInterface {
             }
             catch( IOException e) {
                 System.out.println("Server - Failed to create SSLServerSocket");
-                e.getMessage();
+                System.out.println(e.getMessage());
                 return;
             }
 
@@ -105,8 +105,6 @@ public class Peer implements RemoteInterface {
             //creates folders
             Store.getInstance();
             FilesListing.getInstance();
-
-            System.out.println("Peer " + id + " ready");
 
             Runtime.getRuntime().addShutdownHook(new Thread(Peer::saveStorage));
 
