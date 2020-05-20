@@ -62,7 +62,7 @@ public class FilesListing implements Serializable {
 
         if (pair != null) {
             //backing up a file with the same name that wasn't change
-            if(pair.first.equals(file_id)) {
+            if(!pair.first.equals(file_id)) {
                 System.out.println("This file_name already exists, the content will be updated.");
 
                 //deletes the older file
