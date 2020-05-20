@@ -62,20 +62,20 @@ public class FilesListing implements Serializable {
 
         if (pair != null) {
             System.out.println("This file_name already exists, the content will be updated.");
-            
+
             //deletes the older file
             System.out.println("Deleting " + pair.second + " chunks from the out of date file");
 
             //deletes file from network storage
-            DeleteProtocol.sendDelete(file_id);
+            DeleteProtocol.sendDelete( file_id );
 
             //deletes own files with chunks of the file in the 3 folders ( files, stored, restored)
             FileManager.deleteFilesFolders(pair.first);
 
             //old file is ours so unregister chunks of the file
             Store.getInstance().removeStoredChunks(pair.first);
-
         }
+
         set_files_disk_info();
     }
 
