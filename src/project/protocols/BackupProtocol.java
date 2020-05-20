@@ -25,7 +25,7 @@ public class BackupProtocol  {
 
         //sends putchunks
         for (Chunk chunk : chunks) {
-            PutChunkMessage putchunk = new PutChunkMessage(file_id, chunk.chunk_no, replication_degree, chunk.content);
+            PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk.chunk_no, replication_degree, chunk.content);
 
             String chunk_id = file_id + "_" + chunk.chunk_no;
 
@@ -51,11 +51,9 @@ public class BackupProtocol  {
         for(int tries = 0; tries < 5; tries++) {
             try {
                 NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
-                System.out.println("GOT KEY: " + nodeInfo.key);
 
                 if(nodeInfo == null || nodeInfo.key.equals(ChordNode.this_node.key))
                     continue;
-                message.setSender(nodeInfo.key);
 
                 StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
 
@@ -110,7 +108,6 @@ public class BackupProtocol  {
     public static NodeInfo getBackupPeer(String file_id, int chunk_no, int rep_degree, int n_try){
         try {
             BigInteger key = ChordNode.generateKey(file_id + ":" + chunk_no + ":" + rep_degree + ":" + Peer.id + ":" + n_try);
-            System.out.println("looking  for key: " + key.toString());
             return ChordNode.findSuccessor(key);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
