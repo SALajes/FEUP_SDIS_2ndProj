@@ -65,5 +65,4 @@ public class Network {
 
         return MessageHandler.handleMessage(raw_response);
     }
-
 }

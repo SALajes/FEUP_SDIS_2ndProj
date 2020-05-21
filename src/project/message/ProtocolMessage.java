@@ -15,11 +15,6 @@ public abstract class ProtocolMessage extends BaseMessage {
         this.file_id = file_id;
     }
 
-    public ProtocolMessage(Message_Type message_type, String file_id) {
-        super(message_type);
-        this.file_id = file_id;
-    }
-
     @Override
     public String getHeader(){
         return super.getHeader() + " " + this.file_id;

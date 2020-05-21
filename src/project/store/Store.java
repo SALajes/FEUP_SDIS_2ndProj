@@ -72,74 +72,6 @@ public class Store implements Serializable {
     public static void setInstance(Store storage) { store = storage; }
 
 
-    // ---------------------------------------------- RECLAIM -----------------------------------
-
-    /**
-     * used in the reclaim sub protocol
-     * It changes the storage_capacity variable and deletes the need files for the storage capacity be greater or
-     * equal that the space with storage
-     * @param new_capacity the new_storage_maximum_capacity
-     */
-    public void setStorageCapacity(long new_capacity) {
-        this.storage_capacity = new_capacity;
-
-        deleteOverReplicated();
-
-        Set<String> keys = stored_chunks.keySet();
-
-        //Obtaining iterator over set entries
-        Iterator<String> itr = keys.iterator();
-        String file_id;
-
-        //deletes necessary chunk to have that space
-        while((new_capacity < occupied_storage) && itr.hasNext()) {
-
-            // Getting Key
-            file_id = itr.next();
-
-            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).getChunkNumbers());
-
-            for(Integer chunk_number : chunks_nos) {
-                FileManager.removeChunk(file_id, chunk_number);
-                //checks if can stop deleting files
-                if(new_capacity >= occupied_storage){
-                    return;
-                }
-            }
-        }
-    }
-
-    public int getReplicationDegree(String file_id) {
-        return stored_chunks.get(file_id).getReplication_degree();
-    }
-
-    /**
-     * reclaim starts be deleting over replicated files.
-     * If need, reclaims deletes replicated enough and under replicated
-     */
-    private void deleteOverReplicated() {
-        Set<String> keys = stored_chunks.keySet();
-
-        //Obtaining iterator over set entries
-        Iterator<String> itr = keys.iterator();
-        String file_id;
-
-        //deletes necessary chunk to have that space
-        while((this.storage_capacity < occupied_storage) && itr.hasNext()) {
-            // Getting Key
-            file_id = itr.next();
-
-            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).getChunkNumbers());
-
-            for(Integer chunk_number : chunks_nos) {
-                FileManager.removeChunk(file_id, chunk_number);
-                if (this.storage_capacity >= occupied_storage) {
-                    return;
-                }
-            }
-        }
-    }
-
     //-------------------- STORAGE ------------------
     public long getStorageCapacity() {
         return storage_capacity;
@@ -170,9 +102,91 @@ public class Store implements Serializable {
             occupied_storage = 0;
     }
 
+    //---------------------------- BACKUP CHUNKS ----------------------------------
+
+    public void newBackupChunk(String chunk_id, int replication_degree) {
+
+        if(this.backup_chunks_occurrences.containsKey(chunk_id)){
+            Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
+
+            pair.first = replication_degree;
+
+            this.backup_chunks_occurrences.replace(chunk_id, pair);
+        }
+        else this.backup_chunks_occurrences.put(chunk_id, new Pair<>(replication_degree, new ArrayList<>()));
+
+    }
+    //returns true in case there
+
+    public boolean addBackupChunksOccurrences(String chunk_id, BigInteger key) {
+        if(this.backup_chunks_occurrences.containsKey(chunk_id)){
+            Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
+
+            if(pair.second.contains(key))
+                return false;
+
+            if(getFileActualReplicationDegree(chunk_id) >= getFileReplicationDegree(chunk_id))
+                return true;
+
+            pair.second.add(key);
+            this.backup_chunks_occurrences.replace(chunk_id, pair);
+        }
+        return false;
+    }
+
+    public int getFileActualReplicationDegree(String file_id) {
+        if(backup_chunks_occurrences.containsKey(file_id))
+            return backup_chunks_occurrences.get(file_id).second.size();
+        else return -1;
+    }
+
+    public int getFileReplicationDegree(String file_id) {
+        if(backup_chunks_occurrences.containsKey(file_id))
+            return backup_chunks_occurrences.get(file_id).first;
+        else return -1;
+    }
+
+    public void removeBackupChunkOccurrence(String chunk_id, BigInteger key){
+        removeBackupChunkOccurrence(chunk_id, key, true);
+    }
+
+    public void removeBackupChunkOccurrence(String chunk_id, BigInteger key, boolean delete) {
+        Pair<Integer,ArrayList<BigInteger>> value = this.backup_chunks_occurrences.get(chunk_id);
+
+        if(value != null ){
+            ArrayList<BigInteger> peersList = value.second;
+            peersList.remove(key);
+
+            if(peersList.size() > 0) {
+                Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
+                this.backup_chunks_occurrences.replace(chunk_id, pair);
+            }
+            else if(delete)
+                this.backup_chunks_occurrences.remove(chunk_id);
+        }
+
+    }
+
+    public void removeBackupChunksOccurrences(String chunk_id) {
+        this.backup_chunks_occurrences.remove(chunk_id);
+    }
+
+    public ArrayList<BigInteger> getBackupChunksOccurrences(String chunk_id) {
+        return backup_chunks_occurrences.get(chunk_id).second;
+    }
+
+    public void verifyBackupChunks(BigInteger key) {
+        //TODO verify chunks that this peer backed up
+    }
+
+    public void removeFilePeerInfo(String file_id, int num_chunks){
+        for(int i = 0; i < num_chunks; i++) {
+            String chunk_id = file_id + "_" + i;
+            backup_chunks_occurrences.remove(chunk_id);
+        }
+    }
 
     // --------------------- STORED CHUNKS ----------------------------
-
     public ConcurrentHashMap<String, StoredChunks> getStoredChunks() {
         return stored_chunks;
     }
@@ -243,99 +257,13 @@ public class Store implements Serializable {
         return true;
     }
 
-    public void removeFilePeerInfo(String file_id, int num_chunks){
-        for(int i = 0; i < num_chunks; i++) {
-            String chunk_id = file_id + "_" + i;
-            backup_chunks_occurrences.remove(chunk_id);
-        }
-    }
+    // ------------------------------- RESTORE ------------------------------------
 
-    //---------------------------- BACKUP CHUNKS ----------------------------------
-
-    public void newBackupChunk(String chunk_id, int replication_degree) {
-
-        if(this.backup_chunks_occurrences.containsKey(chunk_id)){
-            Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
-
-            pair.first = replication_degree;
-
-            this.backup_chunks_occurrences.replace(chunk_id, pair);
-        }
-        else this.backup_chunks_occurrences.put(chunk_id, new Pair<>(replication_degree, new ArrayList<>()));
-
-    }
-    //returns true in case there
-
-    public boolean addBackupChunksOccurrences(String chunk_id, BigInteger key) {
-        if(this.backup_chunks_occurrences.containsKey(chunk_id)){
-            Pair<Integer, ArrayList<BigInteger>> pair = this.backup_chunks_occurrences.get(chunk_id);
-
-            if(pair.second.contains(key))
-                return false;
-
-            if(checkBackupChunksOccurrences(chunk_id) >= getBackupChunkReplicationDegree(chunk_id))
-                return true;
-
-            pair.second.add(key);
-            this.backup_chunks_occurrences.replace(chunk_id, pair);
-        }
-        return false;
-    }
-
-    public int checkBackupChunksOccurrences(String chunk_id) {
-        if(backup_chunks_occurrences.containsKey(chunk_id))
-            return backup_chunks_occurrences.get(chunk_id).second.size();
-        return -1;
-    }
-
-    public int getBackupChunkReplicationDegree(String chunk_id) {
-        return backup_chunks_occurrences.get(chunk_id).first;
-    }
-
-    public void removeBackupChunkOccurrence(String chunk_id, BigInteger key) {
-        Pair<Integer,ArrayList<BigInteger>> value = this.backup_chunks_occurrences.get(chunk_id);
-
-        if(value != null ){
-            ArrayList<BigInteger> peersList = value.second;
-            peersList.remove(key);
-
-            if(peersList.size() > 0) {
-                Pair<Integer, ArrayList<BigInteger>> pair = new Pair<>(value.first, peersList);
-                this.backup_chunks_occurrences.replace(chunk_id, pair);
-            }
-            else this.backup_chunks_occurrences.remove(chunk_id);
-        }
-
-    }
-
-    public void removeBackupChunksOccurrences(String chunk_id) {
-        this.backup_chunks_occurrences.remove(chunk_id);
-    }
-
-    public ArrayList<BigInteger> getBackupChunksOccurrences(String chunk_id) {
-        return backup_chunks_occurrences.get(chunk_id).second;
-    }
-
-    public void verifyBackupChunks(BigInteger key) {
-        //TODO verify chunks that this peer backed up
+    public void addRestoredFile(String file_id, String file_name){
+        restored_files.put(file_id, file_name);
     }
 
     //---------------------- DELETE ENHANCEMENT ------------------------
-
-    public boolean checkIfAllDeleted(String file_id){
-        String file_name = FilesListing.getInstance().getFileName(file_id);
-        Integer number_of_chunks = FilesListing.getInstance().getNumberOfChunks(file_name);
-
-        for(int i = 0; i < number_of_chunks; i++) {
-            String chunk_id = file_id + "_" + i;
-            Pair<Integer,ArrayList<BigInteger>> value = this.backup_chunks_occurrences.get(chunk_id);
-
-            if(value.second.size() > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     public void changeFromBackupToDelete(String file_id) {
         String file_name = FilesListing.getInstance().getFileName(file_id);
@@ -366,10 +294,36 @@ public class Store implements Serializable {
         }
     }
 
-    // ------------------------------- RESTORE ------------------------------------
+    // ---------------------------------------------- RECLAIM -----------------------------------
 
-    public void addRestoredFile(String file_id, String file_name){
-        restored_files.put(file_id, file_name);
+    public void setStorageCapacity(long new_capacity) {
+        this.storage_capacity = new_capacity;
+
+        Set<String> keys = stored_chunks.keySet();
+
+        //Obtaining iterator over set entries
+        Iterator<String> itr = keys.iterator();
+        String file_id;
+
+        //deletes necessary chunk to have that space
+        while((new_capacity < occupied_storage) && itr.hasNext()) {
+
+            // Getting Key
+            file_id = itr.next();
+
+            ArrayList<Integer> chunks_nos = new ArrayList<>(stored_chunks.get(file_id).getChunkNumbers());
+
+            for(Integer chunk_number : chunks_nos) {
+                FileManager.removeChunk(file_id, chunk_number);
+                //checks if can stop deleting files
+                if(new_capacity >= occupied_storage){
+                    return;
+                }
+            }
+        }
+
+        if(new_capacity == 0)
+            this.storage_capacity = Macros.INITIAL_STORAGE;
     }
 
     // ----------------------------------- GET PATHS ------------------------------------------------------
@@ -384,10 +338,6 @@ public class Store implements Serializable {
 
     public String getStoreDirectoryPath() {
         return store_directory_path;
-    }
-
-    public String getFilesDirectoryPath() {
-        return files_directory_path;
     }
 }
 

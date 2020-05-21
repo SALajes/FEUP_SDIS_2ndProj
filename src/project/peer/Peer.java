@@ -213,7 +213,9 @@ public class Peer implements RemoteInterface {
         }
 
         long max_disk_space_aux = 1000*(long)max_disk_space;
-        Store.getInstance().setStorageCapacity(max_disk_space_aux);
+
+        Runnable task = ()-> Store.getInstance().setStorageCapacity(max_disk_space_aux);
+        Peer.thread_executor.execute(task);
 
         return 0;
     }
@@ -244,7 +246,7 @@ public class Peer implements RemoteInterface {
             String file_name = (String) file.getKey();
             Pair<String, Integer> pair = (Pair<String, Integer>) file.getValue();// Pair( file_id , number_of_chunks )
             if(pair.first!=null){
-                int replication_degree = Store.getInstance().getBackupChunkReplicationDegree(pair.first + "_0");
+                int replication_degree = Store.getInstance().getFileReplicationDegree(pair.first + "_0");
 
                 state = state + "> path: " + file_name + "\n"
                         + "   id: " + pair.first + "\n"
@@ -253,7 +255,7 @@ public class Peer implements RemoteInterface {
 
                 for (int i = 0; i < pair.second; i++) {
                     state = state + "      id: " + i + "\n"
-                            + "         perceived replication degree: " + Store.getInstance().checkBackupChunksOccurrences(pair.first + "_" + i) + "\n";
+                            + "         perceived replication degree: " + Store.getInstance().getFileActualReplicationDegree(pair.first + "_" + i) + "\n";
                 }
             }
         }
@@ -323,8 +325,6 @@ public class Peer implements RemoteInterface {
             output2.close();
             file_output2.close();
 
-            System.out.println("State saved!");
-
         } catch (IOException i) {
             i.printStackTrace();
         }
@@ -365,8 +365,5 @@ public class Peer implements RemoteInterface {
         }
         return true;
     }
-
-
-
 }
 

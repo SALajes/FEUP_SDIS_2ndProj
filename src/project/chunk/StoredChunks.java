@@ -9,12 +9,6 @@ public class StoredChunks implements Serializable {
     private int replication_degree;
     private ArrayList<Integer> chunk_numbers;
 
-    public StoredChunks(BigInteger owner, int replication_degree){
-        this.owner = owner;
-        this.replication_degree = replication_degree;
-        this.chunk_numbers = new ArrayList<>();
-    }
-
     public StoredChunks(BigInteger owner, Integer replication_degree, ArrayList<Integer> chunks_stored) {
         this.owner = owner;
         this.replication_degree = replication_degree;

@@ -12,7 +12,6 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
-import java.awt.desktop.SystemSleepEvent;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -39,34 +38,38 @@ public class BackupProtocol  {
 
     public static void intermediateProcessPutchunk(PutChunkMessage message, int rep_degree) {
         if(rep_degree > 0){
-            Peer.thread_executor.execute(() -> sendPutchunk(message, rep_degree));
+            Peer.thread_executor.execute(() -> sendPutchunk(message, rep_degree, 0));
 
             int i = rep_degree - 1;
             Runnable task = () -> intermediateProcessPutchunk(message, i);
             Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
-            //TODO WRAP CRITICAL PATH IN SYNCHRONIZED
         }
     }
 
-    public static void sendPutchunk(PutChunkMessage message, int rep_degree) {
-        for(int tries = 0; tries < 10; tries++) {
-            try {
-                NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
+    public static void sendPutchunk(PutChunkMessage message, int rep_degree, int tries) {
+        if(tries > 10){
+            System.out.println("Could not backup chunk " + message.getFileId() + "_" + message.getChunkNo() + " (" + rep_degree + ")");
+            return;
+        }
 
-                if(nodeInfo == null || nodeInfo.key.equals(ChordNode.this_node.key))
-                    continue;
+        try {
+            NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
 
+            if(!(nodeInfo == null || nodeInfo.key.equals(ChordNode.this_node.key))) {
                 StoredMessage stored = (StoredMessage) Network.makeRequest(message, nodeInfo.address, nodeInfo.port);
 
-                if(stored.getStatus().equals(Macros.SUCCESS)) {
+                if (stored.getStatus().equals(Macros.SUCCESS)) {
                     receiveStored(stored);
                     return;
                 }
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
             }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
-        System.out.println("Could not backup chunk " + message.getFileId() + "_" + message.getChunkNo() + " (" + rep_degree + ")");
+
+        int i = tries - 1;
+        Runnable task = () -> sendPutchunk(message, rep_degree, i);
+        Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
     }
 
     public static void receiveStored(StoredMessage stored){
@@ -81,7 +84,7 @@ public class BackupProtocol  {
         String file_id = putchunk.getFileId();
 
         //check if this is this peer with a file
-        if(Store.getInstance().checkBackupChunksOccurrences(file_id + "_" + putchunk.getChunkNo()) != -1) {
+        if(Store.getInstance().getFileActualReplicationDegree(file_id + "_" + putchunk.getChunkNo()) != -1) {
             return sendStored(putchunk, Macros.FAIL);
         }
 
@@ -96,7 +99,9 @@ public class BackupProtocol  {
         int chunkNo = putchunk.getChunkNo();
         String fileId = putchunk.getFileId();
 
-        FileManager.storeChunk(putchunk.getSender(), fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
+        if(status.equals(Macros.SUCCESS))
+            FileManager.storeChunk(putchunk.getSender(), fileId, chunkNo, putchunk.getChunk(), putchunk.getReplicationDegree(), false);
+
         StoredMessage message = new StoredMessage(ChordNode.this_node.key, fileId,  chunkNo, status);
         return message;
     }

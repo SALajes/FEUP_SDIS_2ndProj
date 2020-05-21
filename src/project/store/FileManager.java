@@ -151,14 +151,6 @@ public class FileManager {
 
         channel.write(buffer, chunk_number * Macros.CHUNK_MAX_SIZE, "", handler);
 
-        /*try {
-            channel.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("Couldn't close restore file");
-            return false;
-        }*/
-
         return true;
     }
 
@@ -261,20 +253,12 @@ public class FileManager {
 
             buffer.clear();
 
-            /*try {
-                channel.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
             chunk = new Chunk(chunk_no, chunk_data, chunk_size);
             return chunk;
-
         }
 
         // Does not have the chunk
         return null;
-
     }
 
     public static long retrieveChunkSize(String file_id, int chunk_no){
@@ -314,12 +298,19 @@ public class FileManager {
 
         Store.getInstance().RemoveOccupiedStorage((int) chunk_file.length());
 
+        Chunk chunk = null;
+        BigInteger key = null;
+        if(reclaim_protocol) {
+            chunk = retrieveChunk(file_id, chunk_number);
+            key = Store.getInstance().getKeyOfStoredChunk(file_id);
+        }
+
         if (chunk_file.delete()) {
             //removes from stored chunks Hashtable
             Store.getInstance().removeStoredChunk(file_id, chunk_number);
 
-            if(reclaim_protocol)
-                ReclaimProtocol.sendRemoved( file_id, chunk_number);
+            if(reclaim_protocol && chunk != null && key != null)
+                ReclaimProtocol.sendRemoved(file_id, chunk_number, chunk, key);
 
             return true;
         }

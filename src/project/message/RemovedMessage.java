@@ -1,18 +1,16 @@
 package project.message;
 
+import project.chunk.Chunk;
+
 import java.math.BigInteger;
 
 public class RemovedMessage extends ProtocolMessage {
     private final Integer chunk_no;
 
-    public RemovedMessage(BigInteger key, String file_id, Integer chunk_no) {
+    public RemovedMessage(BigInteger key, String file_id, Integer chunk_no, byte[] chunk) {
         super(Message_Type.REMOVED, key, file_id);
         this.chunk_no = chunk_no;
-    }
-
-    public RemovedMessage(String file_id, Integer chunk_number) {
-        super(Message_Type.REMOVED, file_id);
-        this.chunk_no = chunk_number;
+        this.chunk = chunk;
     }
 
     public Integer getChunkNo() {

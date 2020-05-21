@@ -6,16 +6,8 @@ public class PutChunkMessage extends ProtocolMessage {
     private final int chunk_no;
     private final int replication_degree;
 
-
     public PutChunkMessage(BigInteger key, String file_id, int chunk_no, int replication_degree, byte[] chunk) {
         super(Message_Type.PUTCHUNK, key, file_id);
-        this.chunk_no = chunk_no;
-        this.replication_degree = replication_degree;
-        this.chunk = chunk;
-    }
-
-    public PutChunkMessage(String file_id, int chunk_no, int replication_degree, byte[] chunk) {
-        super(Message_Type.PUTCHUNK, file_id);
         this.chunk_no = chunk_no;
         this.replication_degree = replication_degree;
         this.chunk = chunk;
