@@ -164,12 +164,16 @@ public class FileManager {
 
 
     public static void deleteFilesFolders(String file_id) {
-        deleteFileFolder( Store.getInstance().getStoreDirectoryPath() + file_id );
+        //removes backup files from storage
+        deleteFileFolder( Store.getInstance().getStoreDirectoryPath() + file_id, true );
+        //removes records
         Store.getInstance().removeStoredChunks(file_id);
 
         String file_name = FilesListing.getInstance().getFileName(file_id);
         if( file_name != null) {
-            deleteFileFolder( Store.getInstance().getRestoredDirectoryPath() + file_id );
+            //removes restored files from storage
+            deleteFileFolder( Store.getInstance().getRestoredDirectoryPath() + file_name, false );
+            Store.getInstance().removeRestoredFile(file_id, file_name);
             //You should not delete the original file, when you execute the Delete protocol
             //So the folder files isn't deleted
         }
@@ -181,7 +185,7 @@ public class FileManager {
      * @param file_path directory file
      * @return true if successful, and false other wise
      */
-    public static boolean deleteFileFolder(String file_path) {
+    public static boolean deleteFileFolder(String file_path, Boolean removeStorageSpace) {
 
         File file = new File(file_path);
 
@@ -190,7 +194,6 @@ public class FileManager {
         }
 
         if (file.isFile()) {
-            Store.getInstance().RemoveOccupiedStorage(file.length());
             return file.delete();
         }
 
@@ -202,7 +205,8 @@ public class FileManager {
         if (folder_files != null && folder_files.length > 0) {
             for (File f : folder_files) {
                 if (f.isFile()) {
-                    Store.getInstance().RemoveOccupiedStorage(f.length());
+                    if(removeStorageSpace)
+                        Store.getInstance().RemoveOccupiedStorage(f.length());
                     f.delete();
                 }
                 else if (!f.delete()) {

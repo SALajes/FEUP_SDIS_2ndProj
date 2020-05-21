@@ -221,7 +221,6 @@ public class Store implements Serializable {
             if(chunks.getChunkNumbers().size() == 1) {
                 System.out.println("No more chunks of that file, removing folder of file " + file_id);
                 stored_chunks.remove(file_id);
-                FileManager.deleteFileFolder( this.getStoreDirectoryPath() + file_id);
             } else {
                 chunks.removeChunkNumber(chunk_number);
                 stored_chunks.replace(file_id, chunks);
@@ -318,6 +317,9 @@ public class Store implements Serializable {
 
     public void verifyBackupChunks(BigInteger key) {
         //TODO verify chunks that this peer backed up
+
+        //get current chunk numbers listed
+        ArrayList<Integer> chunkNumbers = stored_chunks.get(key).getChunkNumbers();
     }
 
     //---------------------- DELETE ENHANCEMENT ------------------------
@@ -370,6 +372,10 @@ public class Store implements Serializable {
 
     public void addRestoredFile(String file_id, String file_name){
         restored_files.put(file_id, file_name);
+    }
+
+    public void removeRestoredFile(String file_id, String file_name){
+        restored_files.remove(file_id, file_name);
     }
 
     // ----------------------------------- GET PATHS ------------------------------------------------------
