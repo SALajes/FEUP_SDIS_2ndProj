@@ -3,6 +3,7 @@ package project.protocols;
 import project.chunk.Chunk;
 import project.message.*;
 import project.peer.ChordNode;
+import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
@@ -43,7 +44,7 @@ public class ReclaimProtocol {
         NodeInfo nodeInfo = ChordNode.findSuccessor(chunk_owner);
         if(chunk_owner.equals(nodeInfo.key)) {
             try {
-                ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+                Network.makeRequest(message, nodeInfo.address, nodeInfo.port);
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }

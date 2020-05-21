@@ -4,6 +4,7 @@ import project.Macros;
 import project.chunk.Chunk;
 import project.message.*;
 import project.peer.ChordNode;
+import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
@@ -32,7 +33,7 @@ public class RestoreProtocol {
             if(nodeInfo.key.equals(peers.get(i))){
                 GetChunkMessage message = new GetChunkMessage(nodeInfo.key, file_id, chunk_no);
                 try {
-                    ChunkMessage chunk = (ChunkMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+                    ChunkMessage chunk = (ChunkMessage) Network.makeRequest(message, nodeInfo.address, nodeInfo.port);
                     receiveChunk(chunk);
                     return;
                 } catch (IOException | ClassNotFoundException e) {

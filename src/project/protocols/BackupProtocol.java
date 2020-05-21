@@ -6,6 +6,7 @@ import project.message.BaseMessage;
 import project.message.PutChunkMessage;
 import project.message.StoredMessage;
 import project.peer.ChordNode;
+import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
@@ -48,14 +49,14 @@ public class BackupProtocol  {
     }
 
     public static void sendPutchunk(PutChunkMessage message, int rep_degree) {
-        for(int tries = 0; tries < 5; tries++) {
+        for(int tries = 0; tries < 10; tries++) {
             try {
                 NodeInfo nodeInfo = getBackupPeer(message.getFileId(), message.getChunkNo(), rep_degree, tries);
 
                 if(nodeInfo == null || nodeInfo.key.equals(ChordNode.this_node.key))
                     continue;
 
-                StoredMessage stored = (StoredMessage) ChordNode.makeRequest(message, nodeInfo.address, nodeInfo.port);
+                StoredMessage stored = (StoredMessage) Network.makeRequest(message, nodeInfo.address, nodeInfo.port);
 
                 if(stored.getStatus().equals(Macros.SUCCESS)) {
                     receiveStored(stored);

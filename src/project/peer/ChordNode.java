@@ -1,17 +1,10 @@
 package project.peer;
 
-import org.w3c.dom.Node;
 import project.Macros;
-import project.message.*;
+import project.message.StabilizeResponseMessage;
 import project.protocols.ConnectionProtocol;
 
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class ChordNode {
@@ -35,32 +27,31 @@ public class ChordNode {
     public static ConcurrentHashMap<Integer, NodeInfo> finger_table = new ConcurrentHashMap<>();
     public static CopyOnWriteArrayList<NodeInfo> successors = new CopyOnWriteArrayList<>();
 
-    private static SSLServerSocket server_socket = null;
-    private static SSLSocketFactory socket_factory = null;
-
     public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
         predecessor = null;
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
-        initiateServerSockets();
+        Network.initiateServerSockets(this_node.port);
         initializeFingerTable();
-        printStart();
 
-        Peer.thread_executor.execute(this::run);
+        start();
     }
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
         predecessor = null;
         String address = InetAddress.getLocalHost().getHostAddress();
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
-        initiateServerSockets();
+        Network.initiateServerSockets(this_node.port);
         initializeFingerTable();
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
-        printStart();
-        Peer.thread_executor.execute(this::run);
+
+        start();
     }
 
-    private void printStart() {
+    private void start() {
+        Peer.thread_executor.execute(Network::run);
+        Peer.scheduled_executor.scheduleAtFixedRate(this::verifyState, 3, 10, TimeUnit.SECONDS);
+
         System.out.println("Peer " + Peer.id + " running in address " + this_node.address + " and port " + this_node.port +
                 "\n( key: " + this_node.key.toString() + " )");
     }
@@ -71,12 +62,6 @@ public class ChordNode {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
         return new BigInteger(1, hash).mod(maximum);
-    }
-
-    private void initiateServerSockets() throws IOException {
-        server_socket = (SSLServerSocket) SSLServerSocketFactory.getDefault().createServerSocket(this_node.port);
-        server_socket.setEnabledCipherSuites(server_socket.getSupportedCipherSuites());
-        socket_factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
     }
 
     private void verifyState(){
@@ -144,54 +129,6 @@ public class ChordNode {
             return;
 
         finger_table.put(entry, node);
-    }
-
-    private void run() {
-        Peer.scheduled_executor.scheduleAtFixedRate(this::verifyState, 3, 10, TimeUnit.SECONDS);
-
-        while(true){
-            try{
-                SSLSocket socket = (SSLSocket) server_socket.accept();
-
-                Peer.thread_executor.execute(() -> receiveRequest(socket));
-
-            } catch (IOException ioException) {
-                System.out.println("Failed to accept on port " + this_node.port);
-                ioException.printStackTrace();
-            }
-        }
-    }
-
-    private void receiveRequest(SSLSocket socket) {
-        try {
-
-            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-            BaseMessage request = (BaseMessage) objectInputStream.readObject();
-
-            BaseMessage response = MessageHandler.handleMessage(request);
-
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            objectOutputStream.writeObject(response);
-
-            socket.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static BaseMessage makeRequest(BaseMessage request, String address, Integer port) throws IOException, ClassNotFoundException {
-        SSLSocket socket = (SSLSocket) socket_factory.createSocket(address, port);
-        socket.setEnabledCipherSuites(socket.getSupportedCipherSuites());
-
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        objectOutputStream.writeObject(request);
-
-        ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-        BaseMessage raw_response = (BaseMessage) objectInputStream.readObject();
-
-        socket.close();
-
-        return MessageHandler.handleMessage(raw_response);
     }
 
     public static void setSuccessor(String chunk) {

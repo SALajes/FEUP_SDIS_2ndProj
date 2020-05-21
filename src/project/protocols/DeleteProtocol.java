@@ -2,6 +2,7 @@ package project.protocols;
 
 import project.message.*;
 import project.peer.ChordNode;
+import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
@@ -48,7 +49,7 @@ public class DeleteProtocol {
         NodeInfo nodeInfo = ChordNode.findSuccessor(key);
         if(nodeInfo.key.equals(key)) {
             try {
-                DeleteReceivedMessage response = (DeleteReceivedMessage) ChordNode.makeRequest(delete, nodeInfo.address, nodeInfo.port);
+                DeleteReceivedMessage response = (DeleteReceivedMessage) Network.makeRequest(delete, nodeInfo.address, nodeInfo.port);
                 receiveDeleteReceived(response, number_of_chunks);
                 return;
             } catch (IOException | ClassNotFoundException e) {
