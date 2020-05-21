@@ -66,7 +66,7 @@ public class DeleteProtocol {
         String file_id = deleteMessage.getFileId();
 
         //delete all files and records in stored
-        FileManager.deleteFileFolder(Store.getInstance().getStoreDirectoryPath() + file_id);
+        FileManager.deleteFilesFolders(file_id);
 
         if (Store.getInstance().removeStoredChunks(file_id)) {
             System.out.println("Remove file " + deleteMessage.getFileId() + " records");

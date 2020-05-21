@@ -24,6 +24,8 @@ import project.store.FilesListing;
 import project.Pair;
 import project.store.Store;
 
+import static project.store.FileManager.deleteFileFolder;
+
 
 public class Peer implements RemoteInterface {
     private static final int RegistryPort = 1099;
@@ -191,6 +193,10 @@ public class Peer implements RemoteInterface {
         catch(Exception e){
             throw new InvalidFileException("File name not found");
         }
+
+        //removes restored files from storage
+        deleteFileFolder( Store.getInstance().getRestoredDirectoryPath() + file_name, false );
+        Store.getInstance().removeRestoredFile(file_id, file_name);
 
         //sends message DELETE to all peers
         DeleteProtocol.processDelete(file_id);
