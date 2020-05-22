@@ -33,6 +33,7 @@ public class ChordNode {
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         Network.initiateServerSockets(this_node.port);
         initializeFingerTable();
+        intializeSuccessorList();
 
         start();
     }
@@ -43,6 +44,7 @@ public class ChordNode {
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         Network.initiateServerSockets(this_node.port);
         initializeFingerTable();
+        intializeSuccessorList();
         ConnectionProtocol.connectToNetwork(neighbour_address, neighbour_port);
 
         start();
@@ -73,18 +75,64 @@ public class ChordNode {
     private void stabilize() {
         if(getSuccessorNode() != null){
             NodeInfo previous_successor = getSuccessorNode();
-            StabilizeResponseMessage new_successor = ConnectionProtocol.stabilize(previous_successor);
+            StabilizeResponseMessage new_successor = ConnectionProtocol.stabilize(previous_successor, false);
 
-            if(new_successor == null)
+            if(new_successor == null) {
+                addSuccessor(successors.get(1));
+                successors.add(0,successors.get(1));
+                successors.add(1, successors.get(2));
+                successors.add(2, ChordNode.findSuccessor(successorHelper(successors.get(1).key)));
+                if(!ConnectionProtocol.notifySuccessor()){
+                    addSuccessor(successors.get(1));
+                    successors.add(0,successors.get(1));
+                    successors.add(1, successors.get(2));
+                    successors.add(2, ChordNode.findSuccessor(successorHelper(successors.get(1).key)));
+                }
+              /*  if(predecessor != null)
+                System.out.println("Predecessor: " + predecessor.key);
+                System.out.println("This Node: " + this_node.key);
+                System.out.println("Successor: " + getSuccessorNode().key);
+                System.out.println("Successors: 1-" + successors.get(0).key + " 2-" + successors.get(1).key + " 3-" + successors.get(2).key);*/
+            }
+
+            previous_successor = getSuccessorNode();
+            new_successor = ConnectionProtocol.stabilize(previous_successor, true);
+
+            if(new_successor == null){
                 return;
+            }
 
             if (new_successor.getStatus().equals(Macros.SUCCESS) &&
                     (!this_node.key.equals(new_successor.getSender()) && isKeyBetween(new_successor.getKey(), this_node.key, previous_successor.key))){
                 finger_table.replace(1, new NodeInfo(new_successor.getKey(), new_successor.getAddress(), new_successor.getPort()));
             }
 
-            if(!ConnectionProtocol.notifySuccessor())
-                finger_table.replace(1, previous_successor);
+            boolean successor_updated = !finger_table.get(1).key.equals(previous_successor.key);
+
+            if(!ConnectionProtocol.notifySuccessor()){
+                if(successor_updated){
+                    finger_table.replace(1, previous_successor);
+                }
+            }else{
+                if(successor_updated){
+                    successors.add(2, successors.get(1));
+                    successors.add(1, successors.get(0));
+                    successors.add(0,ChordNode.getSuccessorNode());
+                }
+            }
+
+            NodeInfo successor2 = findSuccessor(successorHelper(ChordNode.getSuccessorNode().key));
+            NodeInfo successor3 = findSuccessor(successorHelper(successor2.key));
+            ChordNode.successors.add(0, ChordNode.getSuccessorNode());
+            ChordNode.successors.add(1, successor2);
+            ChordNode.successors.add(2, successor3);
+
+            /*if(predecessor != null)
+            System.out.println("Predecessor: " + predecessor.key);
+            System.out.println("This Node: " + this_node.key);
+            System.out.println("Successor: " + getSuccessorNode().key);
+            System.out.println("Successors: 1-" + successors.get(0).key + " 2-" + successors.get(1).key + " 3-" + successors.get(2).key);*/
+
         }
     }
 
@@ -93,9 +141,16 @@ public class ChordNode {
             predecessor = null;
     }
 
+    private void intializeSuccessorList(){
+        for(int i = 0; i < num_successors; i++){
+            successors.add(this_node);
+        }
+
+    }
+
     private void initializeFingerTable(){
         for(int i=1; i <= m; i++)
-            finger_table.put(1, this_node);
+            finger_table.put(i, this_node);
     }
 
     private void updateFingerTable() {
@@ -119,7 +174,8 @@ public class ChordNode {
 
         if(getSuccessorNode().equals(this_node)){
             System.out.println("There are no more nodes where this peer can grab on to");
-            System.exit(1);
+            //Não é necessariamente necessário fechar o node, pode aparecer outro para se ligar a este
+            //System.exit(1);
         }
     }
 
@@ -131,11 +187,15 @@ public class ChordNode {
         finger_table.put(entry, node);
     }
 
+    public static BigInteger successorHelper(BigInteger successor){
+        return successor.add(BigInteger.ONE).mod(BigInteger.TWO.pow(m));
+    }
+
     public static void setSuccessor(String chunk) {
         List<String> node_info = Arrays.asList(chunk.split(":"));
         NodeInfo successor =  new NodeInfo(new BigInteger(node_info.get(0).trim()), node_info.get(1).trim(), Integer.parseInt(node_info.get(2).trim()));
         finger_table.put(1, successor);
-        successors.add(successor);
+        successors.add(0, successor);
     }
 
     public static byte[] getSuccessor() {
@@ -148,15 +208,13 @@ public class ChordNode {
         return (node.key + ":" + node.address + ":" + node.port).getBytes();
     }
 
+
     public static NodeInfo getSuccessorNode(){
         return finger_table.get(1);
     }
 
     public static void addSuccessor(NodeInfo successor) {
         finger_table.put(1, successor);
-     /*   for(int i = num_successors; i > 0; i--){
-
-        }*/
     }
 
     public static String setPredecessor(BigInteger key, String address, int port) {
@@ -204,6 +262,15 @@ public class ChordNode {
         for (int n = finger_table.size(); n >= 1; n--) {
             NodeInfo finger = finger_table.get(n);
             if ( finger != null && isKeyBetween(finger.key, this_node.key, key))
+                return finger;
+        }
+        return this_node;
+    }
+
+    public static NodeInfo findPreviousFinger(BigInteger key){
+        for (int n = finger_table.size(); n >= 1; n--) {
+            NodeInfo finger = finger_table.get(n);
+            if ( finger != null && isKeyBetween(finger.key, this_node.key, key) && !finger.key.equals(key))
                 return finger;
         }
         return this_node;

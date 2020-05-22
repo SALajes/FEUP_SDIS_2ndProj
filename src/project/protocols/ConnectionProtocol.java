@@ -30,6 +30,11 @@ public class ConnectionProtocol {
                 ChordNode.setSuccessor(new String(predecessor_response.getChunk()).trim());
                 notifySuccessor();
             }
+            NodeInfo successor2 = ChordNode.findSuccessor(ChordNode.successorHelper(ChordNode.getSuccessorNode().key));
+            NodeInfo successor3 = ChordNode.findSuccessor(ChordNode.successorHelper(successor2.key));
+            ChordNode.successors.add(0, ChordNode.getSuccessorNode());
+            ChordNode.successors.add(1, successor2);
+            ChordNode.successors.add(2, successor3);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -45,6 +50,9 @@ public class ConnectionProtocol {
         NodeInfo successor = new NodeInfo(message.getSender(), message.getAddress(), message.getPort());
         PredecessorResponseMessage response = new PredecessorResponseMessage(ChordNode.this_node.key, ChordNode.getSuccessor());
 
+        ChordNode.successors.add(2, ChordNode.successors.get(1));
+        ChordNode.successors.add(1, ChordNode.getSuccessorNode());
+        ChordNode.successors.add(0, successor);
         ChordNode.addSuccessor(successor);
 
         return response;
@@ -69,13 +77,16 @@ public class ConnectionProtocol {
     }
 
     public static NodeInfo findSuccessor(BigInteger key, NodeInfo node) {
-        try {
-            NodeMessage successor = (NodeMessage) Network.makeRequest(new FindNodeMessage(Message_Type.FIND_SUCCESSOR, ChordNode.this_node.key, key), node.address, node.port);
-            return new NodeInfo(successor.getKey(), successor.getAddress(), successor.getPort());
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return null; //TODO SUCCESSOR IS DOWN
+
+        while(!node.key.equals(ChordNode.this_node.key)){
+            try {
+                NodeMessage successor = (NodeMessage) Network.makeRequest(new FindNodeMessage(Message_Type.FIND_SUCCESSOR, ChordNode.this_node.key, key), node.address, node.port);
+                return new NodeInfo(successor.getKey(), successor.getAddress(), successor.getPort());
+            } catch (IOException | ClassNotFoundException e) {
+                node = ChordNode.findPreviousFinger(node.key);
+            }
         }
+        return ChordNode.this_node;
     }
 
     public static NodeInfo findPredecessor(BigInteger key, NodeInfo node) {
@@ -99,12 +110,13 @@ public class ConnectionProtocol {
     }
 
 
-    public static StabilizeResponseMessage stabilize(NodeInfo node) {
+    public static StabilizeResponseMessage stabilize(NodeInfo node, boolean final_successor) {
         try {
             return (StabilizeResponseMessage) Network.makeRequest(new StabilizeMessage(ChordNode.this_node.key), node.address, node.port);
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Successor is down");
-            ChordNode.fingerTableRecovery(node.key);
+            if(final_successor)
+                ChordNode.fingerTableRecovery(node.key);
             Peer.thread_executor.execute(()->Store.getInstance().verifyBackupChunks(node.key));
             Peer.thread_executor.execute(()->sendDisconnectMessage(new DisconnectMessage(ChordNode.this_node.key, node.key, node.address, node.port)));
 

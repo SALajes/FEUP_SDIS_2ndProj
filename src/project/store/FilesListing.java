@@ -72,53 +72,10 @@ public class FilesListing implements Serializable {
                 Store.getInstance().removeStoredChunks(pair.first);
             }
         }
-
-        setFilesDiskInfo();
     }
 
     public void deleteFileRecords(String file_name) {
         files.remove(file_name);
-        setFilesDiskInfo();
-    }
-
-
-    /**
-     * changes the content of the file to contain this current object
-     * @return true if successful and false otherwise
-     */
-    public boolean setFilesDiskInfo() {
-        try {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(Store.getInstance().getFilesInfoDirectoryPath()));
-            objectOutputStream.writeObject(this);
-
-        } catch (Exception e) {
-            e.getStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     *
-     * @return true if successful and false otherwise
-     */
-    public boolean getFilesDiskInfo() {
-        //if file is empty there is nothing to have in the concurrentMap
-        if (new File(Store.getInstance().getFilesInfoDirectoryPath()).length() == 0) {
-            files = new ConcurrentHashMap<>();
-            return true;
-        }
-
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(Store.getInstance().getFilesInfoDirectoryPath()));
-            filesListing = (FilesListing) objectInputStream.readObject();
-            System.out.println("Files Concurrent map is updated according to disk info");
-
-        } catch (Exception ignored) {
-            System.out.println("Couldn't put files info into the disk");
-            return false;
-        }
-        return true;
     }
 
     public ConcurrentHashMap<String, Pair<String, Integer>> getFiles() {

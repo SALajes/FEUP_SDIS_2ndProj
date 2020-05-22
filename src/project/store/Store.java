@@ -30,9 +30,7 @@ public class Store implements Serializable {
 
     private String peer_directory_path;
     private String files_directory_path;
-    private String files_info_directory_path;
     private String store_directory_path;
-    private String store_info_directory_path;
     private String restored_directory_path;
 
     private long occupied_storage = 0; //in bytes
@@ -51,17 +49,12 @@ public class Store implements Serializable {
         //setting the directory name
         peer_directory_path = Peer.id + "_directory/";
         files_directory_path = peer_directory_path + "files/";
-        files_info_directory_path = peer_directory_path + "files.txt";
         store_directory_path = peer_directory_path + "stored/";
-        store_info_directory_path = peer_directory_path + "stored.txt";
         restored_directory_path = peer_directory_path + "restored/";
 
         FileManager.createDirectory(peer_directory_path);
         FileManager.createDirectory(files_directory_path);
-        FileManager.createEmptyFile(files_info_directory_path);
         FileManager.createDirectory(store_directory_path);
-        //if exists return true but doesn't creates a new file
-        FileManager.createEmptyFile(store_info_directory_path);
         FileManager.createDirectory(restored_directory_path);
     }
 
@@ -179,7 +172,7 @@ public class Store implements Serializable {
         //TODO verify chunks that this peer backed up
 
         //get current chunk numbers listed
-        ArrayList<Integer> chunkNumbers = stored_chunks.get(key).getChunkNumbers();
+      //  ArrayList<Integer> chunkNumbers = stored_chunks.get(key).getChunkNumbers();
     }
 
     public void removeFilePeerInfo(String file_id, int num_chunks){
@@ -333,10 +326,6 @@ public class Store implements Serializable {
     }
 
     // ----------------------------------- GET PATHS ------------------------------------------------------
-
-    public String getFilesInfoDirectoryPath() {
-        return files_info_directory_path;
-    }
 
     public String getRestoredDirectoryPath() {
         return restored_directory_path;

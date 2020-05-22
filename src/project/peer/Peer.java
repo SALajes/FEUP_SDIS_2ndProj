@@ -106,7 +106,7 @@ public class Peer implements RemoteInterface {
                 System.out.println("Storage state loaded from file!");
             }else{
                 Store.getInstance().initializeStore();
-                FilesListing.getInstance().getFilesDiskInfo();
+                FilesListing.getInstance();
             }
 
             scheduled_executor.scheduleAtFixedRate(Peer::saveStorage, 15, 15, TimeUnit.SECONDS);
