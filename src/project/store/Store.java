@@ -300,7 +300,7 @@ public class Store implements Serializable {
         String file_id;
 
         //deletes necessary chunk to have that space
-        while((new_capacity < occupied_storage) && itr.hasNext()) {
+        while((this.storage_capacity < occupied_storage) && itr.hasNext()) {
 
             // Getting Key
             file_id = itr.next();
@@ -310,14 +310,11 @@ public class Store implements Serializable {
             for(Integer chunk_number : chunks_nos) {
                 FileManager.removeChunk(file_id, chunk_number);
                 //checks if can stop deleting files
-                if(new_capacity >= occupied_storage){
+                if(this.storage_capacity >= occupied_storage){
                     break;
                 }
             }
         }
-
-        if(new_capacity == 0)
-            this.storage_capacity = Macros.INITIAL_STORAGE;
     }
 
     public void removeRestoredFile(String file_id, String file_name){
