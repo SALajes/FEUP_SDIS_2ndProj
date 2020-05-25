@@ -1,6 +1,5 @@
 package project.store;
 
-import project.Pair;
 import project.protocols.DeleteProtocol;
 
 import java.io.*;

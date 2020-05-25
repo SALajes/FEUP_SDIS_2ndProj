@@ -69,7 +69,7 @@ public class BackupProtocol  {
             e.printStackTrace();
         }
 
-        int i = tries - 1;
+        int i = tries + 1;
         Runnable task = () -> sendPutchunk(message, rep_degree, i);
         Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
     }
