@@ -26,7 +26,7 @@ public class DeleteProtocol {
         ArrayList<BigInteger> keys = new ArrayList<>();
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
-            keys.addAll(Store.getInstance().getBackupChunksOccurrences(chunk_id));
+            keys.addAll(Store.getInstance().getBackupChunksPeers(chunk_id));
         }
         Set<BigInteger> key_set = new LinkedHashSet(keys);
 
@@ -81,7 +81,7 @@ public class DeleteProtocol {
 
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
-            Store.getInstance().removeBackupChunkOccurrence(chunk_id, key);
+            Store.getInstance().removeBackupChunk(chunk_id, key);
         }
 
         System.out.println("Deletion of all chunks of file " + file_id + " on peer " + key + " successful");

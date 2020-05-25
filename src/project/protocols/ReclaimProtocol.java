@@ -51,7 +51,7 @@ public class ReclaimProtocol {
         int chunk_no = removed.getChunkNo();
         String chunk_id = file_id + "_" + chunk_no;
 
-        Store.getInstance().removeBackupChunkOccurrence(chunk_id, removed.getSender(), false);
+        Store.getInstance().removeBackupChunk(chunk_id, removed.getSender(), false);
 
         int rep_degree = Store.getInstance().getFileReplicationDegree(file_id);
         int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id) + 1;

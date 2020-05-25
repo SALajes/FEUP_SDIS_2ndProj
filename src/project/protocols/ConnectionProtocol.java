@@ -117,7 +117,7 @@ public class ConnectionProtocol {
             System.out.println("Successor is down");
             if(final_successor)
                 ChordNode.fingerTableRecovery(node.key);
-            Peer.thread_executor.execute(()->Store.getInstance().verifyBackupChunks(node.key));
+            Peer.thread_executor.execute(()->BackupProtocol.recoverLostChunksReplication(node.key));
             Peer.thread_executor.execute(()->sendDisconnectMessage(new DisconnectMessage(ChordNode.this_node.key, node.key, node.address, node.port)));
 
             return null;
@@ -152,7 +152,7 @@ public class ConnectionProtocol {
     public static BaseMessage receivedDisconnectMessage(DisconnectMessage message) {
         if(!message.getSender().equals(ChordNode.this_node.key)){
             ChordNode.fingerTableRecovery(message.getKey());
-            Peer.thread_executor.execute(()->Store.getInstance().verifyBackupChunks(message.getKey()));
+            Peer.thread_executor.execute(()->BackupProtocol.recoverLostChunksReplication(message.getKey()));
             Peer.thread_executor.execute(()->sendDisconnectMessage(message));
         }
         return new MockMessage(ChordNode.this_node.key);

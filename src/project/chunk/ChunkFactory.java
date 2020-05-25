@@ -9,30 +9,19 @@ import java.util.Arrays;
 import static java.util.Arrays.copyOfRange;
 
 public class ChunkFactory {
-    private final File file;
-    private final int replication_degree;
-    private ArrayList<Chunk> chunks;
+    public static ArrayList<Chunk> produceChunks(File file, int replication_degree) {
+        ArrayList<Chunk> chunks = new ArrayList<>();
 
-    public ChunkFactory(File file, int replication_degree) {
-        this.file = file;
-        this.replication_degree = replication_degree;
-
-        chunks = new ArrayList<>();
-
-        produceChunks();
-    }
-
-    private void produceChunks() {
         int chunk_no = 0;
 
         byte[] buffer = new byte[Macros.CHUNK_MAX_SIZE];
 
-        try(BufferedInputStream stream = new BufferedInputStream(new FileInputStream(this.file))) {
+        try(BufferedInputStream stream = new BufferedInputStream(new FileInputStream(file))) {
             int size;
             while((size = stream.read(buffer)) > 0){
                 Chunk chunk = new Chunk(chunk_no, Arrays.copyOf(buffer, size), size);
 
-                this.chunks.add(chunk);
+                chunks.add(chunk);
 
                 chunk_no++;
 
@@ -41,19 +30,39 @@ public class ChunkFactory {
             //check if needs 0 size chunk
             if(chunks.get(chunks.size() - 1).size == Macros.CHUNK_MAX_SIZE) {
                 // If the file size is a multiple of the chunk size, the last chunk has size 0.
-                this.chunks.add(new Chunk(chunks.size(), new byte[0], 0));
+                chunks.add(new Chunk(chunks.size(), new byte[0], 0));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return chunks;
     }
 
-    /**
-     *
-     * @return
-     * chunks
-     */
-    public ArrayList<Chunk> getChunks(){
-        return chunks;
+    public static Chunk retrieveChunk(File file, int chunk_no) {
+        int i = 0;
+
+        byte[] buffer = new byte[Macros.CHUNK_MAX_SIZE];
+
+        try(BufferedInputStream stream = new BufferedInputStream(new FileInputStream(file))) {
+            int size;
+            while((size = stream.read(buffer)) > 0){
+                if(chunk_no == i){
+                    return new Chunk(chunk_no, Arrays.copyOf(buffer, size), size);
+                }
+
+                i++;
+
+                buffer = new byte[Macros.CHUNK_MAX_SIZE];
+            }
+
+            if(chunk_no == i+1) {
+                return new Chunk(chunk_no, new byte[0], 0);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

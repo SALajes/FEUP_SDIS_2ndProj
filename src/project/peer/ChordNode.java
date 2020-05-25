@@ -88,11 +88,6 @@ public class ChordNode {
                     successors.add(1, successors.get(2));
                     successors.add(2, ChordNode.findSuccessor(successorHelper(successors.get(1).key)));
                 }
-              /*  if(predecessor != null)
-                System.out.println("Predecessor: " + predecessor.key);
-                System.out.println("This Node: " + this_node.key);
-                System.out.println("Successor: " + getSuccessorNode().key);
-                System.out.println("Successors: 1-" + successors.get(0).key + " 2-" + successors.get(1).key + " 3-" + successors.get(2).key);*/
             }
 
             previous_successor = getSuccessorNode();
@@ -126,13 +121,6 @@ public class ChordNode {
             ChordNode.successors.add(0, ChordNode.getSuccessorNode());
             ChordNode.successors.add(1, successor2);
             ChordNode.successors.add(2, successor3);
-
-            /*if(predecessor != null)
-            System.out.println("Predecessor: " + predecessor.key);
-            System.out.println("This Node: " + this_node.key);
-            System.out.println("Successor: " + getSuccessorNode().key);
-            System.out.println("Successors: 1-" + successors.get(0).key + " 2-" + successors.get(1).key + " 3-" + successors.get(2).key);*/
-
         }
     }
 
@@ -145,7 +133,6 @@ public class ChordNode {
         for(int i = 0; i < num_successors; i++){
             successors.add(this_node);
         }
-
     }
 
     private void initializeFingerTable(){

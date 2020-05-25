@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FilesListing implements Serializable {
 
     private static FilesListing filesListing = new FilesListing();
-    private ConcurrentHashMap<String, Pair<String, Integer>> files = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, FileInfo> files = new ConcurrentHashMap<>();
 
     //singleton
     private FilesListing() {  }
@@ -29,11 +29,11 @@ public class FilesListing implements Serializable {
     public static void setInstance(FilesListing fl) { filesListing = fl; }
 
     public String getFileId(String file_name) {
-        return files.get(file_name).first;
+        return files.get(file_name).getFileId();
     }
 
     public int getNumberOfChunks(String file_name) {
-        return files.get(file_name).second;
+        return files.get(file_name).getNumberOfChunks();
     }
 
     public String getFileName(String file_id) {
@@ -41,35 +41,48 @@ public class FilesListing implements Serializable {
 
         while(it.hasNext()){
             ConcurrentHashMap.Entry file = (ConcurrentHashMap.Entry) it.next();
-            Pair<String, Integer> pair = (Pair<String, Integer>) file.getValue();
-            if(file_id.equals(pair.first)){
+            FileInfo info = (FileInfo) file.getValue();
+            if(file_id.equals(info.getFileId())){
                 return (String) file.getKey();
             }
         }
         return null;
     }
 
-    public void addFile(String file_name, String file_id, Integer number_of_chunks) {
+    public String getFilePath(String file_id) {
+        Iterator it = files.entrySet().iterator();
+
+        while(it.hasNext()){
+            ConcurrentHashMap.Entry file = (ConcurrentHashMap.Entry) it.next();
+            FileInfo info = (FileInfo) file.getValue();
+            if(file_id.equals(info.getFileId())){
+                return (String) info.getFilePath();
+            }
+        }
+        return null;
+    }
+
+    public void addFile(String file_name, String file_id, Integer number_of_chunks, String file_path) {
 
         //put returns the previous value associated with key, or null if there was no mapping for key
-        Pair<String, Integer> pair = files.put(file_name, new Pair<>(file_id, number_of_chunks));
+        FileInfo file = files.put(file_name, new FileInfo(file_name, file_id, number_of_chunks, file_path));
 
-        if (pair != null) {
+        if (file != null) {
             //backing up a file with the same name that wasn't change
-            if(!pair.first.equals(file_id)) {
+            if(!file.getFileId().equals(file_id)) {
                 System.out.println("This file_name already exists, the content will be updated.");
 
                 //deletes the older file
-                System.out.println("Deleting " + pair.second + " chunks from the out of date file");
+                System.out.println("Deleting " + file.getNumberOfChunks() + " chunks from the out of date file");
 
                 //deletes file from network storage
                 DeleteProtocol.processDelete(file_id);
 
                 //deletes own files with chunks of the file in the 3 folders ( files, stored, restored)
-                FileManager.deleteFilesFolders(pair.first);
+                FileManager.deleteFilesFolders(file.getFileId());
 
                 //old file is ours so unregister chunks of the file
-                Store.getInstance().removeStoredChunks(pair.first);
+                Store.getInstance().removeStoredChunks(file.getFileId());
             }
         }
     }
@@ -78,7 +91,7 @@ public class FilesListing implements Serializable {
         files.remove(file_name);
     }
 
-    public ConcurrentHashMap<String, Pair<String, Integer>> getFiles() {
+    public ConcurrentHashMap<String, FileInfo> getFiles() {
         return files;
     }
 }

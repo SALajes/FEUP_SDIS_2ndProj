@@ -13,12 +13,14 @@ import java.util.concurrent.*;
 import project.InvalidFileException;
 import project.Macros;
 
+import project.chunk.Chunk;
 import project.chunk.ChunkFactory;
 import project.chunk.StoredChunks;
 import project.message.InvalidMessageException;
 import project.protocols.BackupProtocol;
 import project.protocols.DeleteProtocol;
 import project.protocols.RestoreProtocol;
+import project.store.FileInfo;
 import project.store.FileManager;
 import project.store.FilesListing;
 import project.Pair;
@@ -140,10 +142,9 @@ public class Peer implements RemoteInterface {
 
         String file_id = FileManager.createFileId(file);
         int number_of_chunks = (int) Math.ceil((float) file.length() / Macros.CHUNK_MAX_SIZE );
-        FilesListing.getInstance().addFile(file.getName(), file_id, number_of_chunks);
+        FilesListing.getInstance().addFile(file.getName(), file_id, number_of_chunks, file_path);
 
-        ChunkFactory chunkFactory = new ChunkFactory(file, replication_degree);
-        BackupProtocol.processPutchunk(replication_degree, file_id, chunkFactory.getChunks());
+        BackupProtocol.processPutchunk(replication_degree, file_id, ChunkFactory.produceChunks(file, replication_degree));
 
         return 0;
     }
@@ -243,25 +244,25 @@ public class Peer implements RemoteInterface {
 
     private String retrieveBackupState() {
         String state = "|--------- BACKUP --------|\n";
-        ConcurrentHashMap<String, Pair<String, Integer>> files = FilesListing.getInstance().getFiles();
+        ConcurrentHashMap<String, FileInfo> files = FilesListing.getInstance().getFiles();
 
         Iterator it = files.entrySet().iterator();
 
         while(it.hasNext()){
             ConcurrentHashMap.Entry file = (ConcurrentHashMap.Entry)it.next();
             String file_name = (String) file.getKey();
-            Pair<String, Integer> pair = (Pair<String, Integer>) file.getValue();// Pair( file_id , number_of_chunks )
-            if(pair.first!=null){
-                int replication_degree = Store.getInstance().getFileReplicationDegree(pair.first + "_0");
+            FileInfo info = (FileInfo) file.getValue();
+            if(info.getFileId()!=null){
+                int replication_degree = Store.getInstance().getFileReplicationDegree(info.getFileId() + "_0");
 
                 state = state + "> path: " + file_name + "\n"
-                        + "   id: " + pair.first + "\n"
+                        + "   id: " + info.getFileId() + "\n"
                         + "   replication degree: " + replication_degree + "\n"
                         + "   > chunks:\n";
 
-                for (int i = 0; i < pair.second; i++) {
+                for (int i = 0; i < info.getNumberOfChunks(); i++) {
                     state = state + "      id: " + i + "\n"
-                            + "         perceived replication degree: " + Store.getInstance().getFileActualReplicationDegree(pair.first + "_" + i) + "\n";
+                            + "         perceived replication degree: " + Store.getInstance().getFileActualReplicationDegree(info.getFileId() + "_" + i) + "\n";
                 }
             }
         }

@@ -26,7 +26,7 @@ public class RestoreProtocol {
     }
 
     public static void sendGetChunk(String file_id, int chunk_no){
-        ArrayList<BigInteger> peers = Store.getInstance().getBackupChunksOccurrences(file_id + "_" + chunk_no);
+        ArrayList<BigInteger> peers = Store.getInstance().getBackupChunksPeers(file_id + "_" + chunk_no);
 
         for(int i=0; i < peers.size(); i++){
             NodeInfo nodeInfo = ChordNode.findSuccessor(peers.get(i));

@@ -1,7 +1,9 @@
 package project.protocols;
 
 import project.Macros;
+import project.chunk.BackedupChunk;
 import project.chunk.Chunk;
+import project.chunk.ChunkFactory;
 import project.message.BaseMessage;
 import project.message.PutChunkMessage;
 import project.message.StoredMessage;
@@ -10,8 +12,10 @@ import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
+import project.store.FilesListing;
 import project.store.Store;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -27,9 +31,7 @@ public class BackupProtocol  {
         for (Chunk chunk : chunks) {
             PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk.chunk_no, replication_degree, chunk.content);
 
-            String chunk_id = file_id + "_" + chunk.chunk_no;
-
-            Store.getInstance().newBackupChunk(chunk_id, replication_degree);
+            Store.getInstance().newBackupChunk(file_id, chunk.chunk_no, replication_degree);
 
             Runnable task = () -> intermediateProcessPutchunk(putchunk, replication_degree);
             Peer.thread_executor.execute(task);
@@ -75,7 +77,7 @@ public class BackupProtocol  {
     public static void receiveStored(StoredMessage stored){
         String chunk_id = stored.getFileId() + "_" + stored.getChunkNo();
         BigInteger key = stored.getSender();
-        Store.getInstance().addBackupChunksOccurrences(chunk_id, key);
+        Store.getInstance().addBackupChunks(chunk_id, key);
     }
 
     // ---------------------- Responses to Peer initiator -----------------------------------------
@@ -115,5 +117,22 @@ public class BackupProtocol  {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void recoverLostChunksReplication(BigInteger key) {
+        ArrayList<BackedupChunk> chunks = Store.getInstance().verifyBackupChunks(key);
+
+        for(int i = 0; i < chunks.size(); i++){
+            BackedupChunk backup_chunk = chunks.get(i);
+            File file = new File(FilesListing.getInstance().getFilePath(backup_chunk.getFileId()));
+            Chunk chunk = ChunkFactory.retrieveChunk(file, backup_chunk.getChunkNumber());
+            if(chunk == null){
+                continue;
+            }
+            PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, backup_chunk.getFileId(),
+                    backup_chunk.getChunkNumber(), backup_chunk.getReplicationDegree(), chunk.content);
+            Runnable task = ()->sendPutchunk(putchunk, backup_chunk.getReplicationDegree()+1, 0);
+            Peer.thread_executor.execute(task);
+        }
     }
 }
