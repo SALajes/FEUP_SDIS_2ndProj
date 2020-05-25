@@ -311,7 +311,7 @@ public class Store implements Serializable {
                 FileManager.removeChunk(file_id, chunk_number);
                 //checks if can stop deleting files
                 if(new_capacity >= occupied_storage){
-                    return;
+                    break;
                 }
             }
         }
