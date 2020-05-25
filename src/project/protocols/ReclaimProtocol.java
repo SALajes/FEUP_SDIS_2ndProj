@@ -58,6 +58,7 @@ public class ReclaimProtocol {
 
         PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_no, rep_degree, removed.getChunk());
 
+        //only one chunk has deleted
         Runnable task = ()-> BackupProtocol.sendPutchunk(putchunk, actual_rep_degree, 0);
         Peer.thread_executor.execute(task);
 

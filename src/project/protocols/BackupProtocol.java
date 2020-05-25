@@ -92,6 +92,7 @@ public class BackupProtocol  {
 
         Boolean x = FileManager.checkConditionsForSTORED(file_id, putchunk.getChunkNo(), putchunk.getChunk().length);
         if(x == null){
+
             return sendStored(putchunk, Macros.SUCCESS);
         }
         else return sendStored(putchunk, Macros.FAIL);

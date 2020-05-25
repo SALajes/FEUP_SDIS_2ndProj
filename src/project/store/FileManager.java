@@ -316,6 +316,12 @@ public class FileManager {
             if(reclaim_protocol && chunk != null && key != null)
                 ReclaimProtocol.sendRemoved(file_id, chunk_number, chunk, key);
 
+            if(Store.getInstance().hasStoredChunks(file_id)) {
+                File chunk_folder = new File( Store.getInstance().getStoreDirectoryPath() + file_id);
+                chunk_folder.delete();
+
+            }
+
             return true;
         }
 

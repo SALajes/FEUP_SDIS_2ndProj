@@ -144,7 +144,10 @@ public class Peer implements RemoteInterface {
 
         String file_id = FileManager.createFileId(file);
         int number_of_chunks = (int) Math.ceil((float) file.length() / Macros.CHUNK_MAX_SIZE );
-        FilesListing.getInstance().addFile(file.getName(), file_id, number_of_chunks, file_path);
+        if(!FilesListing.getInstance().addFile(file.getName(), file_id, number_of_chunks, file_path)) {
+            System.out.println("File was backup in a previous session and hasn't been change since them");
+            return 0;
+        }
 
         BackupProtocol.processPutchunk(replication_degree, file_id, ChunkFactory.produceChunks(file, replication_degree));
 

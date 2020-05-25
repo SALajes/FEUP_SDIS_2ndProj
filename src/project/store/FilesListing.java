@@ -61,7 +61,7 @@ public class FilesListing implements Serializable {
         return null;
     }
 
-    public void addFile(String file_name, String file_id, Integer number_of_chunks, String file_path) {
+    public boolean addFile(String file_name, String file_id, Integer number_of_chunks, String file_path) {
 
         //put returns the previous value associated with key, or null if there was no mapping for key
         FileInfo file = files.put(file_name, new FileInfo(file_name, file_id, number_of_chunks, file_path));
@@ -82,8 +82,14 @@ public class FilesListing implements Serializable {
 
                 //old file is ours so unregister chunks of the file
                 Store.getInstance().removeStoredChunks(file.getFileId());
+
+                return true;
+
+            } else {
+                return  false;
             }
         }
+        return true;
     }
 
     public void deleteFileRecords(String file_name) {

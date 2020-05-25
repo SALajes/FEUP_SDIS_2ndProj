@@ -46,7 +46,6 @@ public class DeleteProtocol {
             return;
         }
 
-        System.out.println("Send delete");
         NodeInfo nodeInfo = ChordNode.findSuccessor(key);
         if(nodeInfo.key.equals(key)) {
             try {

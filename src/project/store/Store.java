@@ -254,6 +254,23 @@ public class Store implements Serializable {
         return true;
     }
 
+    public boolean hasStoredChunks(String file_id) {
+        if(!stored_chunks.containsKey(file_id)) {
+            return false;
+        }
+
+        ArrayList<Integer> chunk_nos = stored_chunks.get(file_id).getChunkNumbers();
+
+        if(chunk_nos.size() == 0) {
+
+            //if there aren't more chunks left erase it
+            stored_chunks.remove(file_id);
+            return false;
+        }
+
+        return true;
+    }
+
     // ------------------------------- RESTORE ------------------------------------
 
     public void addRestoredFile(String file_id, String file_name) {
