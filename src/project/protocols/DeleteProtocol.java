@@ -46,6 +46,7 @@ public class DeleteProtocol {
             return;
         }
 
+        System.out.println("Send delete");
         NodeInfo nodeInfo = ChordNode.findSuccessor(key);
         if(nodeInfo.key.equals(key)) {
             try {
@@ -57,7 +58,7 @@ public class DeleteProtocol {
             }
         }
 
-        int n = tries-1;
+        int n = tries + 1;
         Runnable task = ()->sendDelete(delete, key, number_of_chunks, n);
         Peer.scheduled_executor.schedule(task, (int)Math.pow(3, n), TimeUnit.SECONDS);
     }
