@@ -184,13 +184,6 @@ public class Store implements Serializable {
         return chunks;
     }
 
-    public void removeFilePeerInfo(String file_id, int num_chunks){
-        for(int i = 0; i < num_chunks; i++) {
-            String chunk_id = file_id + "_" + i;
-            backup_chunks.remove(chunk_id);
-        }
-    }
-
     // --------------------- STORED CHUNKS ----------------------------
     public ConcurrentHashMap<String, StoredChunks> getStoredChunks() {
         return stored_chunks;

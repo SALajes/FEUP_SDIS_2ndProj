@@ -18,7 +18,7 @@ public class BackedupChunk implements Serializable {
     }
 
     public void addPeer(BigInteger peer){
-        peer.add(peer);
+        peers.add(peer);
     }
 
     public ArrayList<BigInteger> getPeers() {

@@ -77,6 +77,7 @@ public class BackupProtocol  {
     public static void receiveStored(StoredMessage stored){
         String chunk_id = stored.getFileId() + "_" + stored.getChunkNo();
         BigInteger key = stored.getSender();
+        System.out.println("RECEIVED STORED: " + chunk_id + " -- " + key);
         Store.getInstance().addBackupChunks(chunk_id, key);
     }
 
@@ -121,6 +122,8 @@ public class BackupProtocol  {
 
     public static void recoverLostChunksReplication(BigInteger key) {
         ArrayList<BackedupChunk> chunks = Store.getInstance().verifyBackupChunks(key);
+
+        System.out.println("TO RECOVER: " + chunks.size());
 
         for(int i = 0; i < chunks.size(); i++){
             BackedupChunk backup_chunk = chunks.get(i);
