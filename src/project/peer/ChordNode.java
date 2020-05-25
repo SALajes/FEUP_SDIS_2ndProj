@@ -6,6 +6,7 @@ import project.protocols.ConnectionProtocol;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -29,7 +30,13 @@ public class ChordNode {
 
     public ChordNode(int port) throws IOException, NoSuchAlgorithmException {
         predecessor = null;
-        String address = InetAddress.getLocalHost().getHostAddress();
+        String address;
+        try(final DatagramSocket socket = new DatagramSocket()){
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            address = socket.getLocalAddress().getHostAddress();
+        }catch(Exception e){
+            address = InetAddress.getLocalHost().getHostAddress();
+        }
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         Network.initiateServerSockets(this_node.port);
         initializeFingerTable();
@@ -40,7 +47,13 @@ public class ChordNode {
 
     public ChordNode(int port, String neighbour_address, int neighbour_port) throws IOException, NoSuchAlgorithmException {
         predecessor = null;
-        String address = InetAddress.getLocalHost().getHostAddress();
+        String address;
+        try(final DatagramSocket socket = new DatagramSocket()){
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            address = socket.getLocalAddress().getHostAddress();
+        }catch(Exception e){
+            address = InetAddress.getLocalHost().getHostAddress();
+        }
         this_node = new NodeInfo(generateKey(address + ":" + port), address, port);
         Network.initiateServerSockets(this_node.port);
         initializeFingerTable();

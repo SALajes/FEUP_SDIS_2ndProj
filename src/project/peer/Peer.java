@@ -93,14 +93,15 @@ public class Peer implements RemoteInterface {
             }
 
 
-            RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(object_peer, 0);
 
+            RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(object_peer, 0);
             Registry registry;
             try {
-                registry = LocateRegistry.createRegistry(RegistryPort);
-            } catch (RemoteException e){
-                registry = LocateRegistry.getRegistry(RegistryPort);
+                LocateRegistry.createRegistry(RegistryPort);
+            } catch (RemoteException ignored){
             }
+
+            registry = LocateRegistry.getRegistry(RegistryPort);
 
             registry.rebind(service_access_point, stub);
 
@@ -125,6 +126,7 @@ public class Peer implements RemoteInterface {
         System.setProperty("javax.net.ssl.keyStorePassword", "123456");
         System.setProperty("javax.net.ssl.trustStore", "truststore");
         System.setProperty("javax.net.ssl.trustStorePassword", "123456");
+        System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
     public int backup(String file_path, int replication_degree) throws InvalidMessageException, InvalidFileException {
