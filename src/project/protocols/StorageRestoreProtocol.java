@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import static project.message.Message_Type.NOTIFY_STORAGE;
 
-public class StorageInfo {
+public class StorageRestoreProtocol {
 
     public static void processNotifyStorage() {
         ConcurrentHashMap<String, StoredChunks> stored_chunks = Store.getInstance().getStoredChunks();
