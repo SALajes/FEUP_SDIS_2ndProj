@@ -28,7 +28,6 @@ import project.store.Store;
 
 import static project.store.FileManager.deleteFileFolder;
 
-
 public class Peer implements RemoteInterface {
     private static final int RegistryPort = 1099;
     public static int id;
