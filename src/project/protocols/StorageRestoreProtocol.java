@@ -40,7 +40,7 @@ public class StorageRestoreProtocol {
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
         if(nodeInfo.key.equals(owner)) {
             try {
-                BaseMessage response = Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
+                StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
                 receiveStorageResponse(response);
                 return;
             } catch (IOException | ClassNotFoundException e) {
@@ -54,7 +54,7 @@ public class StorageRestoreProtocol {
 
     }
 
-    private static void receiveStorageResponse(BaseMessage response) {
+    private static void receiveStorageResponse(StorageResponseMessage response) {
 
     }
 
