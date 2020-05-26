@@ -1,9 +1,10 @@
 package project.protocols;
 
+import project.Macros;
 import project.chunk.StoredChunks;
 import project.message.BaseMessage;
-import project.message.DeleteReceivedMessage;
-import project.message.NotifyStorage;
+import project.message.NotifyStorageMessage;
+import project.message.StorageResponseMessage;
 import project.peer.ChordNode;
 import project.peer.Network;
 import project.peer.NodeInfo;
@@ -15,8 +16,6 @@ import java.math.BigInteger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static project.message.Message_Type.NOTIFY_STORAGE;
-
 public class StorageRestoreProtocol {
 
     public static void processNotifyStorage() {
@@ -24,15 +23,17 @@ public class StorageRestoreProtocol {
 
         for (String key: stored_chunks.keySet()) {
             StoredChunks storedChunks = stored_chunks.get(key);
-            NotifyStorage notifyStorage = new NotifyStorage(NOTIFY_STORAGE, ChordNode.this_node.key, storedChunks.getChunkNumbers(), key);
-            sendNotifyStorage(notifyStorage, storedChunks.getOwner(), 0);
+            NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, storedChunks.getChunkNumbers(), key);
+
+            Runnable task = ()->sendNotifyStorage(notifyStorage, storedChunks.getOwner(), 0);
+            Peer.thread_executor.execute(task);
         }
 
     }
 
-    public static void sendNotifyStorage(NotifyStorage notifyStorage, BigInteger owner, int tries) {
+    public static void sendNotifyStorage(NotifyStorageMessage notifyStorage, BigInteger owner, int tries) {
         if(tries >= 10){
-            System.out.println("Couldn't notify storage of chunks " + notifyStorage.getFile_id() + " of the owner " + owner);
+            System.out.println("Couldn't notify storage of chunks " + notifyStorage.getFileId() + " of the owner " + owner);
             return;
         }
 
@@ -40,6 +41,7 @@ public class StorageRestoreProtocol {
         if(nodeInfo.key.equals(owner)) {
             try {
                 BaseMessage response = Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
+                receiveStorageResponse(response);
                 return;
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -48,11 +50,17 @@ public class StorageRestoreProtocol {
 
         int n = tries + 1;
         Runnable task = ()->sendNotifyStorage(notifyStorage, owner, n);
-        Peer.scheduled_executor.schedule(task, (int)Math.pow(3, n), TimeUnit.SECONDS);
+        Peer.scheduled_executor.schedule(task, (int)Math.pow(2, n), TimeUnit.SECONDS);
 
     }
 
-    public static void receiveStorageInfo() {
+    private static void receiveStorageResponse(BaseMessage response) {
 
+    }
+
+    public static BaseMessage receiveNotifyStorage(NotifyStorageMessage notify){
+
+
+        return new StorageResponseMessage(ChordNode.this_node.key);
     }
 }

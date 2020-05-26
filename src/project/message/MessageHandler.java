@@ -27,6 +27,8 @@ public class MessageHandler {
                     return ConnectionProtocol.receivedStabilize();
                 case DISCONNECT:
                     return ConnectionProtocol.receivedDisconnectMessage((DisconnectMessage) message);
+                case NOTIFY_STORAGE:
+                    return StorageRestoreProtocol.receiveNotifyStorage((NotifyStorageMessage) message);
                 case CHUNK:
                 case STORED:
                 case DELETE_RECEIVED:
@@ -36,6 +38,7 @@ public class MessageHandler {
                 case PREDECESSOR:
                 case SUCCESSOR:
                 case STABILIZE_RESPONSE:
+                case STORAGE_RESPONSE:
                 case MOCK:
                     return message;
                 default:
