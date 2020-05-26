@@ -211,58 +211,64 @@ public class FileManager {
     }
 
     /**
-     * get chunk from stored directory
+     * get chunk from stored directory or get from the original record
      * @param file_id encoded
      * @param chunk_no number of the chunk we want to retrieve
      * @return wanted chunk data
      */
     public static Chunk retrieveChunk(String file_id, int chunk_no){
+        String chunk_path;
+        Chunk chunk;
+
         if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
-            Chunk chunk;
             //get the chunk information from the chunks saved file
-            final String chunk_path = Store.getInstance().getStoreDirectoryPath() + "/" + file_id + "/" + chunk_no;
-            File file = new File(chunk_path);
-            int chunk_size = (int) file.length();
-
-            Path path = Paths.get(chunk_path);
-
-            AsynchronousFileChannel channel = null;
-            try {
-                channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            ByteBuffer buffer = ByteBuffer.allocate(chunk_size);
-
-            Future result = channel.read(buffer, 0); // position = 0
-
-            while (! result.isDone());
-
-            try {
-               result.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-
-            buffer.flip();
-
-            int i = 0;
-            byte[] chunk_data = new byte[chunk_size];
-
-            while (buffer.hasRemaining()) {
-                chunk_data[i] = buffer.get();
-                i++;
-            }
-
-            buffer.clear();
-
-            chunk = new Chunk(chunk_no, chunk_data, chunk_size);
-            return chunk;
+            chunk_path = Store.getInstance().getStoreDirectoryPath() + "/" + file_id + "/" + chunk_no;
+        } else {
+            chunk_path = FilesListing.getInstance().getFilePath(file_id);
+            if(chunk_path == null)
+                return null;
         }
 
-        // Does not have the chunk
-        return null;
+        File file = new File(chunk_path);
+
+        int chunk_size = (int) file.length();
+
+        Path path = Paths.get(chunk_path);
+
+        AsynchronousFileChannel channel = null;
+        try {
+            channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        ByteBuffer buffer = ByteBuffer.allocate(chunk_size);
+
+        Future result = channel.read(buffer, 0); // position = 0
+
+        while (! result.isDone());
+
+        try {
+            result.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        buffer.flip();
+
+        int i = 0;
+        byte[] chunk_data = new byte[chunk_size];
+
+        while (buffer.hasRemaining()) {
+            chunk_data[i] = buffer.get();
+            i++;
+        }
+
+        buffer.clear();
+
+        chunk = new Chunk(chunk_no, chunk_data, chunk_size);
+        return chunk;
+
     }
 
     public static long retrieveChunkSize(String file_id, int chunk_no){

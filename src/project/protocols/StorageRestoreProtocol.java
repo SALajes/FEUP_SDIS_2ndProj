@@ -1,32 +1,55 @@
 package project.protocols;
 
-import project.Macros;
+import project.chunk.BackedupChunk;
+import project.chunk.Chunk;
 import project.chunk.StoredChunks;
 import project.message.BaseMessage;
 import project.message.NotifyStorageMessage;
+import project.message.PutChunkMessage;
 import project.message.StorageResponseMessage;
 import project.peer.ChordNode;
 import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
+import project.store.FileManager;
+import project.store.FilesListing;
 import project.store.Store;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class StorageRestoreProtocol {
 
     public static void processNotifyStorage() {
+        //first send to the peer initiators a notification of the files saved of him
         ConcurrentHashMap<String, StoredChunks> stored_chunks = Store.getInstance().getStoredChunks();
 
         for (String key: stored_chunks.keySet()) {
             StoredChunks storedChunks = stored_chunks.get(key);
-            NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, storedChunks.getChunkNumbers(), key);
+            NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, storedChunks.getChunkNumbers(), key, false);
 
             Runnable task = ()->sendNotifyStorage(notifyStorage, storedChunks.getOwner(), 0);
             Peer.thread_executor.execute(task);
+        }
+
+        //second checks his own files and replies the ones that were deleted when he was down
+        ConcurrentHashMap<String, BackedupChunk> backedUpChunk = Store.getInstance().getBacked();
+
+        for (String key: backedUpChunk.keySet()) {
+            BackedupChunk backedUpChunks = backedUpChunk.get(key);
+            ArrayList<Integer> chunk_number = new ArrayList<>();
+            chunk_number.add(backedUpChunks.getChunkNumber());
+            NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, chunk_number, key, true);
+
+            ArrayList<BigInteger> peers = backedUpChunks.getPeers();
+
+            for(BigInteger peerKey: peers) {
+                Runnable task = ()->sendNotifyStorage(notifyStorage, peerKey, 0);
+                Peer.thread_executor.execute(task);
+            }
         }
 
     }
@@ -56,11 +79,57 @@ public class StorageRestoreProtocol {
 
     private static void receiveStorageResponse(StorageResponseMessage response) {
 
+        if(!response.wasSuccessful()) {
+            String file_id = response.getFile_id();
+            Integer chunk_number = response.getChunk_number();
+            String chunk_id = file_id + "_" + chunk_number;
+
+            if(response.isStore()) {
+                //file was deleted so deleting all files and records in stored
+                FileManager.deleteFilesFolders(file_id);
+
+            } else {
+                //replication degree isn't the desire one
+                Store.getInstance().removeStoredChunk(file_id, chunk_number);
+                int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
+
+                Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
+                if(chunk == null) {
+                    PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
+
+                    //done chunk by chunk
+                    Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
+                    Peer.thread_executor.execute(task);
+                }
+
+            }
+        }
+
+        //records weren't deleted, so nothing to do were
+
     }
 
-    public static BaseMessage receiveNotifyStorage(NotifyStorageMessage notify){
+    public static BaseMessage receiveNotifyStorage(NotifyStorageMessage notify) {
+        ArrayList<Integer> chunk_numbers = notify.getChunk_numbers();
+        String file_id = notify.getFileId();
 
+        //checking if it is still store
+        if(notify.isCheckStorage()) {
+            // process was to be done chunk by chunk, was deletion could be just for some of the chunks
+            for (Integer chunk_no : chunk_numbers) {
+                if(Store.getInstance().checkStoredChunk(file_id, chunk_no))
+                    return new StorageResponseMessage(ChordNode.this_node.key, chunk_no, file_id, notify.isCheckStorage(), true);
+                else return new StorageResponseMessage(ChordNode.this_node.key, chunk_no, file_id, notify.isCheckStorage(), false);
+            }
 
-        return new StorageResponseMessage(ChordNode.this_node.key);
+        } else {
+            //add the peer to the list of Peers containing the file
+            for (Integer chunk_no : chunk_numbers) {
+                Store.getInstance().addBackupChunks(file_id + "_" + chunk_no, notify.getSender());
+                return new StorageResponseMessage(ChordNode.this_node.key, chunk_no, file_id, notify.isCheckStorage(), true);
+            }
+        }
+        return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers.get(0), file_id, notify.isCheckStorage(), true);
+
     }
 }

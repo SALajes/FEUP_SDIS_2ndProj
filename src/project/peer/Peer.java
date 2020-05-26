@@ -106,10 +106,10 @@ public class Peer implements RemoteInterface {
             registry.rebind(service_access_point, stub);
 
             if(loadStorage()){
-                //TODO UNCOMMENT TO TEST
-                //Peer.thread_executor.execute(()->StorageRestoreProtocol.processNotifyStorage());
                 System.out.println("Storage state loaded from file!");
-            }else{
+                //TODO descomentar
+                //Peer.thread_executor.execute(()-> StorageRestoreProtocol.processNotifyStorage());
+            } else {
                 Store.getInstance().initializeStore();
                 FilesListing.getInstance();
             }

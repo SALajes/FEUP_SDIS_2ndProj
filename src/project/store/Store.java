@@ -1,7 +1,6 @@
 package project.store;
 
 import project.Macros;
-import project.Pair;
 import project.chunk.BackedupChunk;
 import project.chunk.StoredChunks;
 import project.peer.Peer;
@@ -182,6 +181,10 @@ public class Store implements Serializable {
         }
 
         return chunks;
+    }
+
+    public ConcurrentHashMap<String, BackedupChunk> getBacked() {
+        return backup_chunks;
     }
 
 

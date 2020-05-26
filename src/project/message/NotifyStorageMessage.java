@@ -6,24 +6,25 @@ import java.util.ArrayList;
 public class NotifyStorageMessage extends BaseMessage {
     private final ArrayList<Integer> chunk_numbers;
     private final String file_id;
+    //if true the message is checking if the file is store, otherwise is notifying that is indeed storage
+    private final boolean checkStorage;
 
-    //TODO O IDEAL AQUI SERIA ELE RECEBER UMA FLAG A DIZER SE É UMA NOTIFICAÇÃO RELATIVA AOS SEUS BACK UP CHUNKS
-    // OU AOS STORED CHUNKS, PARA QUE QUEM RECEBE POSSA PROCEDER EM CONFORMIDADE EM VEZ DE ESTARMOS A CRIAR DUAS
-    // MESAGENS DIFERENTES PARA ISTO
-    //private final String type;
-
-    public NotifyStorageMessage(BigInteger sender, /* String type,*/ ArrayList<Integer> chunk_numbers, String file_id) {
+    public NotifyStorageMessage(BigInteger sender, ArrayList<Integer> chunk_numbers, String file_id, boolean checkStorage) {
         super(Message_Type.NOTIFY_STORAGE, sender);
         this.chunk_numbers = chunk_numbers;
         this.file_id = file_id;
-        //this.type = type;
+        this.checkStorage = checkStorage;
     }
 
     public String getFileId() {
         return file_id;
     }
 
-    /*public String getType() {
-        return type;
-    }*/
+    public boolean isCheckStorage() {
+        return checkStorage;
+    }
+
+    public ArrayList<Integer> getChunk_numbers() {
+        return chunk_numbers;
+    }
 }
