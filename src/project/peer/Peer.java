@@ -92,8 +92,6 @@ public class Peer implements RemoteInterface {
                 return;
             }
 
-
-
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(object_peer, 0);
             Registry registry;
             try {
@@ -107,8 +105,7 @@ public class Peer implements RemoteInterface {
 
             if(loadStorage()){
                 System.out.println("Storage state loaded from file!");
-                //TODO descomentar
-                //Peer.thread_executor.execute(()-> StorageRestoreProtocol.processNotifyStorage());
+                Peer.scheduled_executor.schedule(()-> StorageRestoreProtocol.processNotifyStorage(), 10, TimeUnit.SECONDS);
             } else {
                 Store.getInstance().initializeStore();
                 FilesListing.getInstance();

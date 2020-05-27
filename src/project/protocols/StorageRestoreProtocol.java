@@ -12,7 +12,6 @@ import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
 import project.store.FileManager;
-import project.store.FilesListing;
 import project.store.Store;
 
 import java.io.IOException;
@@ -24,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 public class StorageRestoreProtocol {
 
     public static void processNotifyStorage() {
+
+        System.out.println("Here");
         //first send to the peer initiators a notification of the files saved of him
         ConcurrentHashMap<String, StoredChunks> stored_chunks = Store.getInstance().getStoredChunks();
 
@@ -31,6 +32,7 @@ public class StorageRestoreProtocol {
             StoredChunks storedChunks = stored_chunks.get(key);
             NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, storedChunks.getChunkNumbers(), key, false);
 
+            System.out.println("Notifying peers initiator we has chunks of "+ storedChunks.getOwner());
             Runnable task = ()->sendNotifyStorage(notifyStorage, storedChunks.getOwner(), 0);
             Peer.thread_executor.execute(task);
         }
@@ -47,6 +49,7 @@ public class StorageRestoreProtocol {
             ArrayList<BigInteger> peers = backedUpChunks.getPeers();
 
             for(BigInteger peerKey: peers) {
+                System.out.println("Sending notify backup 3 of " + peerKey);
                 Runnable task = ()->sendNotifyStorage(notifyStorage, peerKey, 0);
                 Peer.thread_executor.execute(task);
             }
@@ -61,8 +64,10 @@ public class StorageRestoreProtocol {
         }
 
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
+        System.out.println("key " + nodeInfo.key);
         if(nodeInfo.key.equals(owner)) {
             try {
+                System.out.println("Sending notify backup message to " + owner );
                 StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
                 receiveStorageResponse(response);
                 return;
@@ -78,6 +83,7 @@ public class StorageRestoreProtocol {
     }
 
     private static void receiveStorageResponse(StorageResponseMessage response) {
+        System.out.println("Receive notify storage response");
 
         if(!response.wasSuccessful()) {
             String file_id = response.getFile_id();
@@ -110,6 +116,8 @@ public class StorageRestoreProtocol {
     }
 
     public static BaseMessage receiveNotifyStorage(NotifyStorageMessage notify) {
+        System.out.println("Receive notify store");
+
         ArrayList<Integer> chunk_numbers = notify.getChunk_numbers();
         String file_id = notify.getFileId();
 

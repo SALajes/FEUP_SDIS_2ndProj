@@ -22,7 +22,6 @@ public class TestApp {
             System.exit(1);
         }
 
-        //normally 1923
         String peer_ap = args[0];
         String sub_protocol = args[1];
         //opnd_1 is either a file_path or a maximum_disk_space

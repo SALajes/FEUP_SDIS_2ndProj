@@ -3,6 +3,7 @@ package project.peer;
 import project.Macros;
 import project.message.StabilizeResponseMessage;
 import project.protocols.ConnectionProtocol;
+import project.protocols.StorageRestoreProtocol;
 
 import java.io.IOException;
 import java.math.BigInteger;
