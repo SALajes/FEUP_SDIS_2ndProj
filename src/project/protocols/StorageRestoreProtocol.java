@@ -24,7 +24,6 @@ public class StorageRestoreProtocol {
 
     public static void processNotifyStorage() {
 
-        System.out.println("Here");
         //first send to the peer initiators a notification of the files saved of him
         ConcurrentHashMap<String, StoredChunks> stored_chunks = Store.getInstance().getStoredChunks();
 
@@ -32,7 +31,6 @@ public class StorageRestoreProtocol {
             StoredChunks storedChunks = stored_chunks.get(key);
             NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, storedChunks.getChunkNumbers(), key, false);
 
-            System.out.println("Notifying peers initiator we has chunks of "+ storedChunks.getOwner());
             Runnable task = ()->sendNotifyStorage(notifyStorage, storedChunks.getOwner(), 0);
             Peer.thread_executor.execute(task);
         }
@@ -49,8 +47,7 @@ public class StorageRestoreProtocol {
             ArrayList<BigInteger> peers = backedUpChunks.getPeers();
 
             for(BigInteger peerKey: peers) {
-                System.out.println("Sending notify backup 3 of " + peerKey);
-                Runnable task = ()->sendNotifyStorage(notifyStorage, peerKey, 0);
+                Runnable task = ()-> sendNotifyStorage(notifyStorage, peerKey, 0);
                 Peer.thread_executor.execute(task);
             }
         }
@@ -64,16 +61,12 @@ public class StorageRestoreProtocol {
         }
 
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
-        System.out.println("key " + nodeInfo.key);
-        if(nodeInfo.key.equals(owner)) {
-            try {
-                System.out.println("Sending notify backup message to " + owner );
-                StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
-                receiveStorageResponse(response);
-                return;
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
+        try {
+            StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
+            receiveStorageResponse(response);
+            return;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
 
         int n = tries + 1;
@@ -83,35 +76,42 @@ public class StorageRestoreProtocol {
     }
 
     private static void receiveStorageResponse(StorageResponseMessage response) {
-        System.out.println("Receive notify storage response");
 
-        if(!response.wasSuccessful()) {
-            String file_id = response.getFile_id();
-            Integer chunk_number = response.getChunk_number();
-            String chunk_id = file_id + "_" + chunk_number;
+        String file_id = response.getFile_id();
+        ArrayList<Integer> not_found_chunk_numbers = response.get_not_foundChunk_number();
 
-            if(response.isStore()) {
-                //file was deleted so deleting all files and records in stored
-                FileManager.deleteFilesFolders(file_id);
+        if(not_found_chunk_numbers != null) {
+            if (response.isStore()) {
+                //is possible only some chunks were deleted so is necessary to do this operation chunk be chunk
+                for (Integer chunk_number : not_found_chunk_numbers) {
+                    String chunk_id = file_id + "_" + chunk_number;
 
-            } else {
-                //replication degree isn't the desire one
-                Store.getInstance().removeStoredChunk(file_id, chunk_number);
-                int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
+                    //replication degree isn't the desire one
+                    Store.getInstance().removeStoredChunk(file_id, chunk_number);
+                    int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
 
-                Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
-                if(chunk == null) {
-                    PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
+                    Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
+                    if (chunk != null) {
+                        PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
-                    //done chunk by chunk
-                    Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
-                    Peer.thread_executor.execute(task);
+                        //done chunk by chunk
+                        Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
+                        Peer.thread_executor.execute(task);
+                    }
                 }
 
             }
-        }
+        } else {
+            if (!response.isStore()) {
+                //is not possible to only have chunks of the file deleted, so delete it all
+                System.out.println("File " + file_id +" was deleted during fault.Deleting");
 
-        //records weren't deleted, so nothing to do were
+                //file was deleted so deleting all files and records in stored
+                FileManager.deleteFilesFolders(file_id);
+
+            }
+        }
+        //otherwise everything is ok
 
     }
 
@@ -123,21 +123,21 @@ public class StorageRestoreProtocol {
 
         //checking if it is still store
         if(notify.isCheckStorage()) {
-            // process was to be done chunk by chunk, was deletion could be just for some of the chunks
-            for (Integer chunk_no : chunk_numbers) {
-                if(Store.getInstance().checkStoredChunk(file_id, chunk_no))
-                    return new StorageResponseMessage(ChordNode.this_node.key, chunk_no, file_id, notify.isCheckStorage(), true);
-                else return new StorageResponseMessage(ChordNode.this_node.key, chunk_no, file_id, notify.isCheckStorage(), false);
+            //our the file is store our it is not store, can not have only some chunks
+            if(Store.getInstance().check_delete(file_id)) {
+                return new StorageResponseMessage(ChordNode.this_node.key, null, chunk_numbers, file_id, notify.isCheckStorage());
+            } else {
+                return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, null, file_id, notify.isCheckStorage());
             }
 
         } else {
             //add the peer to the list of Peers containing the file
             for (Integer chunk_no : chunk_numbers) {
                 Store.getInstance().addBackupChunks(file_id + "_" + chunk_no, notify.getSender());
-                return new StorageResponseMessage(ChordNode.this_node.key, chunk_no, file_id, notify.isCheckStorage(), true);
             }
+            return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), true);
         }
-        return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers.get(0), file_id, notify.isCheckStorage(), true);
+
 
     }
 }

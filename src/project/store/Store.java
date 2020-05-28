@@ -230,6 +230,14 @@ public class Store implements Serializable {
         else return false;
     }
 
+    public boolean remove_not_delete(BigInteger key, String file_id){
+        if(not_deleted.containsKey(file_id)) {
+            not_deleted.get(file_id).remove(key);
+            return true;
+        }
+        else return false;
+    }
+
     public void removeStoredChunk(String file_id, Integer chunk_number) {
         if(stored_chunks.containsKey(file_id)) {
             StoredChunks chunks = stored_chunks.get(file_id);
@@ -309,6 +317,9 @@ public class Store implements Serializable {
         }
     }
 
+    public boolean check_delete(String file_id) {
+        return !stored_chunks.contains(file_id);
+    }
     // ---------------------------------------------- RECLAIM -----------------------------------
 
     public void setStorageCapacity(long new_capacity) {
