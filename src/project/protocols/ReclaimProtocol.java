@@ -56,11 +56,13 @@ public class ReclaimProtocol {
         int rep_degree = Store.getInstance().getFileReplicationDegree(file_id);
         int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id) + 1;
 
-        PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_no, rep_degree, removed.getChunk());
+        if(actual_rep_degree < rep_degree ) {
+            PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_no, rep_degree, removed.getChunk());
 
-        //only one chunk has deleted
-        Runnable task = ()-> BackupProtocol.sendPutchunk(putchunk, actual_rep_degree, 0);
-        Peer.thread_executor.execute(task);
+            //only one chunk has deleted
+            Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, actual_rep_degree, 0);
+            Peer.thread_executor.execute(task);
+        }
 
         return new MockMessage(ChordNode.this_node.key);
     }
