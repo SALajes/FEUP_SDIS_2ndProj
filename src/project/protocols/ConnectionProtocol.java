@@ -18,7 +18,6 @@ public class ConnectionProtocol {
             ConnectionResponseMessage response = (ConnectionResponseMessage) Network.makeRequest(request, neighbour_address, neighbour_port);
             ChordNode.setPredecessor(response.getPredecessor(), response.getAddress(), response.getPort());
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
         }
 
         try {
@@ -35,7 +34,6 @@ public class ConnectionProtocol {
             ChordNode.successors.add(1, successor2);
             ChordNode.successors.add(2, successor3);
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
         }
     }
 
