@@ -272,7 +272,6 @@ public class FileManager {
         if(chunk_size > Macros.CHUNK_MAX_SIZE){
             chunk_size = chunk_size - chunk_no*Macros.CHUNK_MAX_SIZE;
         }
-        System.out.println("Chunk_size: " + chunk_size);
         if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
             chunk = new Chunk(chunk_no, chunk_data, chunk_size);
         } else {
