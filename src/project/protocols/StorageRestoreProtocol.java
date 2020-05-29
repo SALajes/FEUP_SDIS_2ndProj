@@ -68,7 +68,6 @@ public class StorageRestoreProtocol {
             return;
         } catch (IOException | ClassNotFoundException e) {
             //the peer we trying to contact isn't available
-            //e.printStackTrace();
         }
 
         int n = tries + 1;
@@ -90,16 +89,18 @@ public class StorageRestoreProtocol {
 
                     //replication degree isn't the desire one
                     Store.getInstance().removeStoredChunk(file_id, chunk_number);
+
                     int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
+                    int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
 
                     Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
                     if (chunk != null) {
                         PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
-                        //done chunk by chunk
                         Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1);
                         Peer.thread_executor.execute(task);
                     }
+
                 }
 
             }
