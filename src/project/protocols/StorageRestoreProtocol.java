@@ -133,11 +133,13 @@ public class StorageRestoreProtocol {
         String file_id = notify.getFileId();
 
         //checking if it is still store
-        if(notify.isCheckStorage()) {
+        if(!notify.isCheckStorage()) {
             //our the file is store our it is not store, can not have only some chunks
             if(Store.getInstance().check_delete(file_id)) {
+                System.out.println("deleted");
                 return new StorageResponseMessage(ChordNode.this_node.key, null, chunk_numbers, file_id, notify.isCheckStorage());
             } else {
+                System.out.println("not deleted");
                 return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, null, file_id, notify.isCheckStorage());
             }
 
