@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 public class StorageRestoreProtocol {
 
     public static void processNotifyStorage() {
-
         //first send to the peer initiators a notification of the files saved of him
         ConcurrentHashMap<String, StoredChunks> stored_chunks = Store.getInstance().getStoredChunks();
 
