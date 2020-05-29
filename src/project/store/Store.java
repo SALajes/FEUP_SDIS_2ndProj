@@ -185,7 +185,7 @@ public class Store implements Serializable {
     }
 
     public boolean check_backup(String chunk_id) {
-        return backup_chunks.contains(chunk_id);
+        return backup_chunks.containsKey(chunk_id);
     }
 
 
