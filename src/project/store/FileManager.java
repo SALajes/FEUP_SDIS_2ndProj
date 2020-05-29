@@ -2,7 +2,6 @@ package project.store;
 
 import project.Macros;
 import project.chunk.Chunk;
-import project.peer.Peer;
 import project.protocols.ReclaimProtocol;
 
 import java.io.*;
@@ -16,6 +15,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -244,12 +246,7 @@ public class FileManager {
 
         ByteBuffer buffer = ByteBuffer.allocate(chunk_size);
 
-        Future result;
-        if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
-            result = channel.read(buffer, 0); // position = 0
-        } else {
-            result = channel.read(buffer, chunk_no * Macros.CHUNK_MAX_SIZE); // position = 0
-        }
+        Future result = channel.read(buffer, 0); // position = 0
 
         while (! result.isDone());
 
@@ -261,26 +258,30 @@ public class FileManager {
 
         buffer.flip();
 
-        int size;
+        int i = 0;
+        byte[] chunk_data = new byte[chunk_size];
 
-        if(chunk_size < Macros.CHUNK_MAX_SIZE) {
-            size = chunk_size;
-        } else {
-            size = Macros.CHUNK_MAX_SIZE;
-        }
-
-        byte[] chunk_data = new byte[size];
-
-        for(int i = 0; i < size; i++) {
+        while (buffer.hasRemaining()) {
             chunk_data[i] = buffer.get();
+            i++;
         }
 
         buffer.clear();
 
-        chunk = new Chunk(chunk_no, chunk_data, chunk_size);
+        byte[] wanted_chunk_data;
+        if (chunk_size > Macros.CHUNK_MAX_SIZE){
+            wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, (chunk_no + 1) * Macros.CHUNK_MAX_SIZE + 1);
+        } else {
+            wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, chunk_size + 1);
+        }
+
+
+
+        chunk = new Chunk(chunk_no, wanted_chunk_data, chunk_size);
         return chunk;
 
     }
+
 
     public static long retrieveChunkSize(String file_id, int chunk_no){
         final String chunk_path = Store.getInstance().getStoreDirectoryPath() + "/" + file_id + "/" + chunk_no;
@@ -297,6 +298,7 @@ public class FileManager {
     public static boolean removeChunk(String file_id, int chunk_number){
         return removeChunk(file_id, chunk_number, true);
     }
+
     public static boolean removeChunk(String file_id, int chunk_number, boolean reclaim_protocol) {
 
         //check if the chunk exists
