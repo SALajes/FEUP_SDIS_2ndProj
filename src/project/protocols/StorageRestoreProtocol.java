@@ -149,11 +149,9 @@ public class StorageRestoreProtocol {
             }
             return new StorageResponseMessage(ChordNode.this_node.key, found, not_found, file_id, notify.isCheckStorage());
         } else {
-
-            //Mano tenho o teu ficheiro
-
+            String chunk_id = file_id + "_" + 0;
             //our the file is store our it is not store, can not have only some chunks
-            if(Store.getInstance().check_backup(file_id)) {
+            if(Store.getInstance().check_backup(chunk_id)) {
                 System.out.println("File deleted");
                 return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), false);
             } else {

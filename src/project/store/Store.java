@@ -25,9 +25,6 @@ public class Store implements Serializable {
     //state of our files - key file_id + chunk_no and value wanted_replication degree and list of peers
     private ConcurrentHashMap<String, BackedupChunk> backup_chunks = new ConcurrentHashMap<>();
 
-    //used for delete_enhancement, key file_id and value list of peers
-    private ConcurrentHashMap<String, ArrayList<BigInteger>> not_deleted = new ConcurrentHashMap<>();
-
     private String peer_directory_path;
     private String files_directory_path;
     private String store_directory_path;
@@ -234,14 +231,6 @@ public class Store implements Serializable {
         else return false;
     }
 
-    public boolean remove_not_delete(BigInteger key, String file_id){
-        if(not_deleted.containsKey(file_id)) {
-            not_deleted.get(file_id).remove(key);
-            return true;
-        }
-        else return false;
-    }
-
     public void removeStoredChunk(String file_id, Integer chunk_number) {
         if(stored_chunks.containsKey(file_id)) {
             StoredChunks chunks = stored_chunks.get(file_id);
@@ -295,29 +284,14 @@ public class Store implements Serializable {
 
     //---------------------- DELETE ENHANCEMENT ------------------------
 
-    public void changeFromBackupToDelete(String file_id) {
+    public void deleteFromBackup(String file_id) {
         String file_name = FilesListing.getInstance().getFileName(file_id);
         Integer number_of_chunks = FilesListing.getInstance().getNumberOfChunks(file_name);
 
         for(int i = 0; i < number_of_chunks; i++) {
             String chunk_id = file_id + "_" + i;
 
-            BackedupChunk chunk =  this.backup_chunks.get(chunk_id);
-
-            if(chunk.getPeers().size() > 0) {
-                ArrayList<BigInteger> copy_by_reference = chunk.getPeers();
-                not_deleted.put(chunk_id, copy_by_reference);
-            }
             removeBackupChunk(chunk_id);
-        }
-
-        for(int i = 0; i < number_of_chunks; i++) {
-            String chunk_id = file_id + "_" + i;
-
-            ArrayList<BigInteger> peers_list =  not_deleted.get(chunk_id);
-            if(peers_list != null) {
-                System.out.println("File " + file_id + " still as " + peers_list.size() + " peers that didn't erase chunk " + i);
-            }
         }
     }
 

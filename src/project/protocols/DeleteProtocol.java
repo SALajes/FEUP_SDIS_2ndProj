@@ -42,7 +42,7 @@ public class DeleteProtocol {
     public static void sendDelete(DeleteMessage delete, BigInteger key, int number_of_chunks, int tries) {
         if(tries >= 10){
             System.out.println("Couldn't delete all chunks of the file " + delete.getFileId());
-            Store.getInstance().changeFromBackupToDelete(delete.getFileId());
+            Store.getInstance().deleteFromBackup(delete.getFileId());
             return;
         }
 
