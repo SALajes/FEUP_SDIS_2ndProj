@@ -282,7 +282,7 @@ public class FileManager {
                 chunk = new Chunk(chunk_no, wanted_chunk_data, Macros.CHUNK_MAX_SIZE);
             } else {
                 wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, chunk_size );
-                chunk = new Chunk(chunk_no, wanted_chunk_data, chunk_size - chunk_no * Macros.CHUNK_MAX_SIZE);
+                chunk = new Chunk(chunk_no, wanted_chunk_data, chunk_size - (chunk_no * Macros.CHUNK_MAX_SIZE));
             }
         }
 
