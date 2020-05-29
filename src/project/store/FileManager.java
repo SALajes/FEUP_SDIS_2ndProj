@@ -270,9 +270,9 @@ public class FileManager {
 
         byte[] wanted_chunk_data;
         if (chunk_size > Macros.CHUNK_MAX_SIZE){
-            wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, (chunk_no + 1) * Macros.CHUNK_MAX_SIZE + 1);
+            wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, (chunk_no + 1) * Macros.CHUNK_MAX_SIZE);
         } else {
-            wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, chunk_size + 1);
+            wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, chunk_size );
         }
 
 
