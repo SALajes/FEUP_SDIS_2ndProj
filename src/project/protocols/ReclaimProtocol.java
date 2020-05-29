@@ -28,14 +28,12 @@ public class ReclaimProtocol {
             return;
         }
 
-        //sends to the peer initiator
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
         if(owner.equals(nodeInfo.key)) {
             try {
                 Network.makeRequest(message, nodeInfo.address, nodeInfo.port);
                 return;
             } catch (IOException | ClassNotFoundException e) {
-                //the peer we trying to contact isn't available
             }
         }
 
@@ -44,7 +42,7 @@ public class ReclaimProtocol {
         Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
     }
 
-    // -------------- peer not initiator
+    // -------------- receiver peer
 
     public static BaseMessage receiveRemoved(RemovedMessage removed) {
         String file_id = removed.getFileId();
@@ -59,7 +57,6 @@ public class ReclaimProtocol {
         if(actual_rep_degree < rep_degree ) {
             PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_no, rep_degree, removed.getChunk());
 
-            //only one chunk has deleted
             Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, actual_rep_degree);
             Peer.thread_executor.execute(task);
         }
