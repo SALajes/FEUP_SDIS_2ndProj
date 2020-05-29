@@ -97,7 +97,7 @@ public class StorageRestoreProtocol {
                         PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
                         //done chunk by chunk
-                        Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
+                        Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1);
                         Peer.thread_executor.execute(task);
                     }
                 }

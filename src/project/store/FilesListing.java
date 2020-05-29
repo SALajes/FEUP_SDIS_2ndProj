@@ -55,7 +55,7 @@ public class FilesListing implements Serializable {
             ConcurrentHashMap.Entry file = (ConcurrentHashMap.Entry) it.next();
             FileInfo info = (FileInfo) file.getValue();
             if(file_id.equals(info.getFileId())){
-                return (String) info.getFilePath();
+                return info.getFilePath();
             }
         }
         return null;
