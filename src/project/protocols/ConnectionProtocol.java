@@ -142,11 +142,18 @@ public class ConnectionProtocol {
     }
 
     private static void sendDisconnectMessage(DisconnectMessage message) {
-        try {
-            Network.makeRequest(message, ChordNode.getSuccessorNode().address, ChordNode.getSuccessorNode().port);
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+
+        for(int i = 0; i < ChordNode.num_successors; i++){
+            NodeInfo successor = ChordNode.successors.get(i);
+            try {
+                Network.makeRequest(message,successor.address, successor.port);
+                return;
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println("Successor is down, moving on to next successor...");
+            }
         }
+
+        System.out.println("All successors in list are currently down");
     }
 
     public static BaseMessage receivedDisconnectMessage(DisconnectMessage message) {

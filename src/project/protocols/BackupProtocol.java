@@ -41,7 +41,6 @@ public class BackupProtocol  {
     public static void intermediateProcessPutchunk(PutChunkMessage message, int rep_degree) {
         if(rep_degree > 0){
             Peer.thread_executor.execute(() -> sendPutchunk(message, rep_degree, 0));
-
             int i = rep_degree - 1;
             Runnable task = () -> intermediateProcessPutchunk(message, i);
             Peer.scheduled_executor.schedule(task, 400, TimeUnit.MILLISECONDS);
