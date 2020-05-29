@@ -63,7 +63,13 @@ public class StorageRestoreProtocol {
 
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
         try {
+            System.out.println("Owner: " + owner);
+            System.out.println("Successor: " + nodeInfo.key);
             StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
+            if(response == null)
+                System.out.println("Null response");
+            else
+                System.out.println(response.isStore());
             receiveStorageResponse(response);
             return;
         } catch (IOException | ClassNotFoundException e) {
@@ -92,14 +98,15 @@ public class StorageRestoreProtocol {
 
                     int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
                     int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
+                    if(actual_rep_degree < rep_degree ) {
+                        Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
+                        if (chunk != null) {
+                            PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
-                    Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
-                    if (chunk != null) {
-                        PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
-
-                        //done chunk by chunk
-                         Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
-                         Peer.thread_executor.execute(task);
+                            //done chunk by chunk
+                            Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
+                            Peer.thread_executor.execute(task);
+                        }
                     }
 
                 }
