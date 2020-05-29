@@ -56,9 +56,6 @@ public class ReclaimProtocol {
         int rep_degree = Store.getInstance().getFileReplicationDegree(chunk_id);
         int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
 
-        System.out.println(rep_degree);
-        System.out.println(actual_rep_degree);
-
         if(actual_rep_degree < rep_degree ) {
             PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_no, rep_degree, removed.getChunk());
 

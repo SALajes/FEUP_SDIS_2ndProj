@@ -28,6 +28,7 @@ public class StorageRestoreProtocol {
 
         for (String key: stored_chunks.keySet()) {
             StoredChunks storedChunks = stored_chunks.get(key);
+
             NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, storedChunks.getChunkNumbers(), key, false);
 
             Runnable task = ()->sendNotifyStorage(notifyStorage, storedChunks.getOwner(), 0);
@@ -39,9 +40,10 @@ public class StorageRestoreProtocol {
 
         for (String key: backedUpChunk.keySet()) {
             BackedupChunk backedUpChunks = backedUpChunk.get(key);
+
             ArrayList<Integer> chunk_number = new ArrayList<>();
             chunk_number.add(backedUpChunks.getChunkNumber());
-            NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, chunk_number, key, true);
+            NotifyStorageMessage notifyStorage = new NotifyStorageMessage(ChordNode.this_node.key, chunk_number, backedUpChunks.getFileId(), true);
 
             ArrayList<BigInteger> peers = backedUpChunks.getPeers();
 
@@ -115,7 +117,6 @@ public class StorageRestoreProtocol {
     }
 
     public static BaseMessage receiveNotifyStorage(NotifyStorageMessage notify) {
-        System.out.println("Receive notify store");
 
         ArrayList<Integer> chunk_numbers = notify.getChunk_numbers();
         String file_id = notify.getFileId();
