@@ -54,9 +54,6 @@ public class DeleteProtocol {
                 return;
             } catch (IOException | ClassNotFoundException e) {
                 //the peer we trying to contact isn't available
-                //e.printStackTrace();
-               // System.err.println("Peer on address " + nodeInfo.address + " port " + nodeInfo.port + "can not be reached");
-                return;
             }
         }
 

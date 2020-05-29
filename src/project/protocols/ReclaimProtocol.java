@@ -36,7 +36,6 @@ public class ReclaimProtocol {
                 return;
             } catch (IOException | ClassNotFoundException e) {
                 //the peer we trying to contact isn't available
-                //e.printStackTrace();
             }
         }
 

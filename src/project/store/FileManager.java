@@ -249,7 +249,12 @@ public class FileManager {
 
         ByteBuffer buffer = ByteBuffer.allocate(chunk_size);
 
-        Future result = channel.read(buffer, 0); // position = 0
+        Future result;
+        if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
+            result = channel.read(buffer, 0); // position = 0
+        } else {
+            result = channel.read(buffer, chunk_no * Macros.CHUNK_MAX_SIZE); // position = 0
+        }
 
         while (! result.isDone());
 
@@ -261,12 +266,18 @@ public class FileManager {
 
         buffer.flip();
 
-        int i = 0;
-        byte[] chunk_data = new byte[chunk_size];
+        int size;
 
-        while (buffer.hasRemaining()) {
+        if(chunk_size < Macros.CHUNK_MAX_SIZE) {
+            size = chunk_size;
+        } else {
+            size = Macros.CHUNK_MAX_SIZE;
+        }
+
+        byte[] chunk_data = new byte[size];
+
+        for(int i = 0; i < size; i++) {
             chunk_data[i] = buffer.get();
-            i++;
         }
 
         buffer.clear();
