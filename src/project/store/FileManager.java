@@ -261,18 +261,18 @@ public class FileManager {
 
         buffer.flip();
 
-        int i = 0;
-        byte[] chunk_data;
+        int size;
 
         if(chunk_size < Macros.CHUNK_MAX_SIZE) {
-            chunk_data = new byte[chunk_size];
+            size = chunk_size;
         } else {
-            chunk_data = new byte[Macros.CHUNK_MAX_SIZE];
+            size = Macros.CHUNK_MAX_SIZE;
         }
 
-        while (buffer.hasRemaining()) {
+        byte[] chunk_data = new byte[size];
+
+        for(int i = 0; i < size; i++) {
             chunk_data[i] = buffer.get();
-            i++;
         }
 
         buffer.clear();
