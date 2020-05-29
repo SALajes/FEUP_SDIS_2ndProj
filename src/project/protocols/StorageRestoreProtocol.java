@@ -14,6 +14,7 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -62,12 +63,19 @@ public class StorageRestoreProtocol {
         }
 
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
-        try {
-            StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
-            receiveStorageResponse(response);
-            return;
-        } catch (IOException | ClassNotFoundException e) {
-            //the peer we trying to contact isn't available
+        if(nodeInfo.key.equals(owner)) {
+            try {
+                System.out.println("Owner: " + owner);
+                StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
+                if (response == null)
+                    System.out.println("Null response");
+                else
+                    System.out.println(response.isStore());
+                receiveStorageResponse(response);
+                return;
+            } catch (IOException | ClassNotFoundException e) {
+                //the peer we trying to contact isn't available
+            }
         }
 
         int n = tries + 1;
@@ -93,12 +101,15 @@ public class StorageRestoreProtocol {
                     int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
                     int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
 
-                    Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
-                    if (chunk != null) {
-                        PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
+                    if(actual_rep_degree < rep_degree ) {
+                        Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
+                        if (chunk != null) {
+                            PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
-                        Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1);
-                        Peer.thread_executor.execute(task);
+                            //done chunk by chunk
+                            Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1);
+                            Peer.thread_executor.execute(task);
+                        }
                     }
 
                 }
@@ -124,20 +135,29 @@ public class StorageRestoreProtocol {
         String file_id = notify.getFileId();
 
         //checking if it is still store
-        if(notify.isCheckStorage()) {
-            //our the file is store our it is not store, can not have only some chunks
-            if(Store.getInstance().check_delete(file_id)) {
-                return new StorageResponseMessage(ChordNode.this_node.key, null, chunk_numbers, file_id, notify.isCheckStorage());
-            } else {
-                return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, null, file_id, notify.isCheckStorage());
-            }
+        if(!notify.isCheckStorage()) {
+            ArrayList<Integer> found = new ArrayList<>();
+            ArrayList<Integer> not_found = new ArrayList<>();
 
-        } else {
-            //add the peer to the list of Peers containing the file
-            for (Integer chunk_no : chunk_numbers) {
-                Store.getInstance().addBackupChunks(file_id + "_" + chunk_no, notify.getSender());
+            for(Integer chunk_no : chunk_numbers) {
+                if(Store.getInstance().checkStoredChunk(file_id, chunk_no) ) {
+                    found.add(chunk_no);
+                } else {
+                    not_found.add(chunk_no);
+                }
             }
-            return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), true);
+            return new StorageResponseMessage(ChordNode.this_node.key, found, not_found, file_id, notify.isCheckStorage());
+        } else {
+            //our the file is store our it is not store, can not have only some chunks
+            if(Store.getInstance().check_backup(file_id)) {
+                return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), false);
+            } else {
+                //add the peer to the list of Peers containing the file
+                for (Integer chunk_no : chunk_numbers) {
+                    Store.getInstance().addBackupChunks(file_id + "_" + chunk_no, notify.getSender());
+                }
+                return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), true);
+            }
         }
 
 
