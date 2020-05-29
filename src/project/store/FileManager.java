@@ -127,6 +127,8 @@ public class FileManager {
      */
     public static boolean writeChunkToRestoredFile(String file_name, byte[] chunk_data, int chunk_number) {
 
+        System.out.println("Name: " + file_name + " num: " + chunk_number);
+
         String file_path = Store.getInstance().getRestoredDirectoryPath() + "/" + file_name;
 
         ByteBuffer buffer = ByteBuffer.wrap(chunk_data);
@@ -224,8 +226,11 @@ public class FileManager {
 
         if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
             //get the chunk information from the chunks saved file
+            System.out.println("If");
             chunk_path = Store.getInstance().getStoreDirectoryPath() + "/" + file_id + "/" + chunk_no;
         } else {
+            System.out.println("Else");
+
             chunk_path = FilesListing.getInstance().getFilePath(file_id);
             if(chunk_path == null)
                 return null;
