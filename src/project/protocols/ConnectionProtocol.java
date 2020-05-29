@@ -130,6 +130,8 @@ public class ConnectionProtocol {
                 Network.makeRequest(new StabilizeMessage(ChordNode.this_node.key), ChordNode.predecessor.address, ChordNode.predecessor.port);
                 return true;
             } catch (IOException | ClassNotFoundException e) {
+                //the peer we trying to contact isn't available
+                //e.printStackTrace();
             }
         }
         return false;

@@ -35,7 +35,8 @@ public class ReclaimProtocol {
                 Network.makeRequest(message, nodeInfo.address, nodeInfo.port);
                 return;
             } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+                //the peer we trying to contact isn't available
+                //e.printStackTrace();
             }
         }
 

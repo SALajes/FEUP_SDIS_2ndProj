@@ -67,7 +67,8 @@ public class StorageRestoreProtocol {
             receiveStorageResponse(response);
             return;
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            //the peer we trying to contact isn't available
+            //e.printStackTrace();
         }
 
         int n = tries + 1;
