@@ -62,18 +62,19 @@ public class StorageRestoreProtocol {
         }
 
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
-        try {
-            System.out.println("Owner: " + owner);
-            System.out.println("Successor: " + nodeInfo.key);
-            StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
-            if(response == null)
-                System.out.println("Null response");
-            else
-                System.out.println(response.isStore());
-            receiveStorageResponse(response);
-            return;
-        } catch (IOException | ClassNotFoundException e) {
-            //the peer we trying to contact isn't available
+        if(nodeInfo.key.equals(owner)) {
+            try {
+                System.out.println("Owner: " + owner);
+                StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
+                if (response == null)
+                    System.out.println("Null response");
+                else
+                    System.out.println(response.isStore());
+                receiveStorageResponse(response);
+                return;
+            } catch (IOException | ClassNotFoundException e) {
+                //the peer we trying to contact isn't available
+            }
         }
 
         int n = tries + 1;

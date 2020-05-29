@@ -6,7 +6,6 @@ import project.peer.ChordNode;
 import project.peer.Network;
 import project.peer.NodeInfo;
 import project.peer.Peer;
-import project.store.Store;
 
 import java.io.IOException;
 import java.math.BigInteger;
