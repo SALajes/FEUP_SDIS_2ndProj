@@ -20,23 +20,23 @@ Compiling can be done running the 'compile.sh' script in the src folder (note th
 
 ## Run
 ### RMI Registry
-First, the 'registry.sh' script must be run in order to create a registry in port 1099 in src:
+First, the 'registry.sh' script must be run in order to create a registry in port 1099:
 > bash ../scripts/registry.sh
 
 ### Peer
-You can run a peer using the following script in the 'out' generated folder:
-> bash ../../scripts/peer.sh <peer_id> <service_access_point> <port> [<neighbour_address> <neighbour_port>]
+You can run a peer using the following command:
+> java project.peer.Peer <peer_id> <service_access_point> <port> [<neighbour_address> <neighbour_port>]
 
 If only the first three parameters are given, the peer starts a new network, being the first one in it.
 If the two last optional parameters are added, the peer will try to connect to the peer which address and port were provided in order to enter its network.
 
 ### TestApp
-You can run the TestApp using the following script in the 'out' generated folder:
-> bash ../../scripts/test.sh <peer_access_point> BACKUP|RESTORE|DELETE|RECLAIM|STATE [<opnd_1> [<optnd_2]]
+You can run the TestApp using the following script:
+> bash ../scripts/test.sh <peer_access_point> BACKUP|RESTORE|DELETE|RECLAIM|STATE [<opnd_1> [<optnd_2]]
 
 ### Cleanup
-To cleanup the peer directories created, simply run the following script in the 'out' generated folder:
-> bash ../../scripts/cleanup.sh
+To cleanup the peer directories created, simply run the following script:
+> bash ../scripts/cleanup.sh
 
 
 ##Authors
