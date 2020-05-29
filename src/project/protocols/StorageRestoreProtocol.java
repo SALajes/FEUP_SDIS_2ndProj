@@ -14,7 +14,6 @@ import project.peer.Peer;
 import project.store.FileManager;
 import project.store.Store;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -100,7 +99,6 @@ public class StorageRestoreProtocol {
 
                     Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
                     if (chunk != null) {
-                        System.out.println("Doesn't have chunk");
                         PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
                         //done chunk by chunk
@@ -111,8 +109,7 @@ public class StorageRestoreProtocol {
 
                 }
 
-            }
-            else {
+            } else {
                 //is not possible to only have chunks of the file deleted, so delete it all
                 System.out.println("File " + file_id +" was deleted during fault. Deleting");
 
@@ -132,37 +129,30 @@ public class StorageRestoreProtocol {
 
         //checking if it is still store
         if(notify.isCheckStorage()) {
-            //MAno tens o meu ficheiro?
-            System.out.println("Check if it was deleted");
             ArrayList<Integer> found = new ArrayList<>();
             ArrayList<Integer> not_found = new ArrayList<>();
 
             for(Integer chunk_no : chunk_numbers) {
                 if(Store.getInstance().checkStoredChunk(file_id, chunk_no) ) {
                     found.add(chunk_no);
-                    System.out.println("Found");
                 } else {
                     not_found.add(chunk_no);
-                    System.out.println("Not found");
                 }
             }
             return new StorageResponseMessage(ChordNode.this_node.key, found, not_found, file_id, notify.isCheckStorage());
         } else {
             String chunk_id = file_id + "_" + 0;
             //our the file is store our it is not store, can not have only some chunks
-            if(Store.getInstance().check_backup(chunk_id)) {
-                System.out.println("File deleted");
+            if(!Store.getInstance().check_backup(chunk_id)) {
                 return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), false);
             } else {
                 //add the peer to the list of Peers containing the file
                 for (Integer chunk_no : chunk_numbers) {
                     Store.getInstance().addBackupChunks(file_id + "_" + chunk_no, notify.getSender());
                 }
-                System.out.println("add replication degree");
                 return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), true);
             }
         }
-
 
     }
 }

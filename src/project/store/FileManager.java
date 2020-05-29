@@ -127,13 +127,6 @@ public class FileManager {
      */
     public static boolean writeChunkToRestoredFile(String file_name, byte[] chunk_data, int chunk_number) {
 
-        System.out.println("Name: " + file_name + " num: " + chunk_number);
-        if(chunk_data == null){
-            System.out.println("data null??");
-        }else{
-            System.out.println("good data");
-        }
-
         String file_path = Store.getInstance().getRestoredDirectoryPath() + "/" + file_name;
 
         ByteBuffer buffer = ByteBuffer.wrap(chunk_data);

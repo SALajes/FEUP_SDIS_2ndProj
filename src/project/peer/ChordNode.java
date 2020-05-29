@@ -176,7 +176,6 @@ public class ChordNode {
         if(getSuccessorNode().equals(this_node)){
             System.out.println("There are no more nodes where this peer can grab on to");
             //Não é necessariamente necessário fechar o node, pode aparecer outro para se ligar a este
-            //System.exit(1);
         }
     }
 

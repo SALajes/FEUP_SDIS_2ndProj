@@ -236,7 +236,6 @@ public class Store implements Serializable {
             StoredChunks chunks = stored_chunks.get(file_id);
 
             if(chunks.getChunkNumbers().size() == 1) {
-                System.out.println("No more chunks of that file, removing folder of file " + file_id);
                 stored_chunks.remove(file_id);
             } else {
                 chunks.removeChunkNumber(chunk_number);
