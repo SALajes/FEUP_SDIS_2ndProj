@@ -128,6 +128,11 @@ public class FileManager {
     public static boolean writeChunkToRestoredFile(String file_name, byte[] chunk_data, int chunk_number) {
 
         System.out.println("Name: " + file_name + " num: " + chunk_number);
+        if(chunk_data == null){
+            System.out.println("data null??");
+        }else{
+            System.out.println("good data");
+        }
 
         String file_path = Store.getInstance().getRestoredDirectoryPath() + "/" + file_name;
 
@@ -226,11 +231,8 @@ public class FileManager {
 
         if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
             //get the chunk information from the chunks saved file
-            System.out.println("If");
             chunk_path = Store.getInstance().getStoreDirectoryPath() + "/" + file_id + "/" + chunk_no;
         } else {
-            System.out.println("Else");
-
             chunk_path = FilesListing.getInstance().getFilePath(file_id);
             if(chunk_path == null)
                 return null;
@@ -273,6 +275,11 @@ public class FileManager {
 
         buffer.clear();
 
+
+        if(chunk_size > Macros.CHUNK_MAX_SIZE){
+            chunk_size = chunk_size - chunk_no*Macros.CHUNK_MAX_SIZE;
+        }
+        System.out.println("Chunk_size: " + chunk_size);
         if(Store.getInstance().checkStoredChunk(file_id, chunk_no)) {
             chunk = new Chunk(chunk_no, chunk_data, chunk_size);
         } else {
@@ -281,7 +288,7 @@ public class FileManager {
                 wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, (chunk_no + 1) * Macros.CHUNK_MAX_SIZE);
                 chunk = new Chunk(chunk_no, wanted_chunk_data, Macros.CHUNK_MAX_SIZE);
             } else {
-                wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, chunk_size );
+                wanted_chunk_data = Arrays.copyOfRange(chunk_data, chunk_no * Macros.CHUNK_MAX_SIZE, chunk_no * Macros.CHUNK_MAX_SIZE +chunk_size );
                 chunk = new Chunk(chunk_no, wanted_chunk_data, chunk_size - (chunk_no * Macros.CHUNK_MAX_SIZE));
             }
         }
