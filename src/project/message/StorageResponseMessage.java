@@ -14,8 +14,10 @@ public class StorageResponseMessage extends BaseMessage {
         super(Message_Type.STORAGE_RESPONSE, sender);
         if(successful) {
             success_chunk_numbers = chunk_numbers;
+            not_success_chunk_numbers = null;
         } else {
             not_success_chunk_numbers = chunk_numbers;
+            success_chunk_numbers = null;
         }
 
         this.file_id = file_id;

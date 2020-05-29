@@ -65,12 +65,7 @@ public class StorageRestoreProtocol {
         NodeInfo nodeInfo = ChordNode.findSuccessor(owner);
         if(nodeInfo.key.equals(owner)) {
             try {
-                System.out.println("Owner: " + owner);
                 StorageResponseMessage response = (StorageResponseMessage) Network.makeRequest(notifyStorage, nodeInfo.address, nodeInfo.port);
-                if (response == null)
-                    System.out.println("Null response");
-                else
-                    System.out.println(response.isStore());
                 receiveStorageResponse(response);
                 return;
             } catch (IOException | ClassNotFoundException e) {
@@ -98,11 +93,15 @@ public class StorageRestoreProtocol {
                     //replication degree isn't the desire one
                     Store.getInstance().removeStoredChunk(file_id, chunk_number);
 
+
                     int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
                     int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
-                    if(actual_rep_degree < rep_degree ) {
+
+                    if(actual_rep_degree < rep_degree) {
+
                         Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
                         if (chunk != null) {
+                            System.out.println("Doesn't have chunk");
                             PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
                             //done chunk by chunk
@@ -114,10 +113,9 @@ public class StorageRestoreProtocol {
                 }
 
             }
-        } else {
-            if (!response.isStore()) {
+            else {
                 //is not possible to only have chunks of the file deleted, so delete it all
-                System.out.println("File " + file_id +" was deleted during fault.Deleting");
+                System.out.println("File " + file_id +" was deleted during fault. Deleting");
 
                 //file was deleted so deleting all files and records in stored
                 FileManager.deleteFilesFolders(file_id);
@@ -134,27 +132,36 @@ public class StorageRestoreProtocol {
         String file_id = notify.getFileId();
 
         //checking if it is still store
-        if(!notify.isCheckStorage()) {
+        if(notify.isCheckStorage()) {
+            //MAno tens o meu ficheiro?
+            System.out.println("Check if it was deleted");
             ArrayList<Integer> found = new ArrayList<>();
             ArrayList<Integer> not_found = new ArrayList<>();
 
             for(Integer chunk_no : chunk_numbers) {
                 if(Store.getInstance().checkStoredChunk(file_id, chunk_no) ) {
                     found.add(chunk_no);
+                    System.out.println("Found");
                 } else {
                     not_found.add(chunk_no);
+                    System.out.println("Not found");
                 }
             }
             return new StorageResponseMessage(ChordNode.this_node.key, found, not_found, file_id, notify.isCheckStorage());
         } else {
+
+            //Mano tenho o teu ficheiro
+
             //our the file is store our it is not store, can not have only some chunks
             if(Store.getInstance().check_backup(file_id)) {
+                System.out.println("File deleted");
                 return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), false);
             } else {
                 //add the peer to the list of Peers containing the file
                 for (Integer chunk_no : chunk_numbers) {
                     Store.getInstance().addBackupChunks(file_id + "_" + chunk_no, notify.getSender());
                 }
+                System.out.println("add replication degree");
                 return new StorageResponseMessage(ChordNode.this_node.key, chunk_numbers, file_id, notify.isCheckStorage(), true);
             }
         }
