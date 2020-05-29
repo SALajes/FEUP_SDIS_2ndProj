@@ -96,17 +96,14 @@ public class StorageRestoreProtocol {
                     int rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
                     int actual_rep_degree = Store.getInstance().getFileActualReplicationDegree(chunk_id);
 
-
                     Chunk chunk = FileManager.retrieveChunk(file_id, chunk_number);
                     if (chunk != null) {
                         PutChunkMessage putchunk = new PutChunkMessage(ChordNode.this_node.key, file_id, chunk_number, rep_degree, chunk.content);
 
                         //done chunk by chunk
-                        Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1, 0);
+                        Runnable task = () -> BackupProtocol.sendPutchunk(putchunk, rep_degree + 1);
                         Peer.thread_executor.execute(task);
                     }
-
-
                 }
 
             } else {
