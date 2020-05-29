@@ -187,6 +187,10 @@ public class Store implements Serializable {
         return backup_chunks;
     }
 
+    public boolean check_backup(String chunk_id) {
+        return backup_chunks.contains(chunk_id);
+    }
+
 
     // --------------------- STORED CHUNKS ----------------------------
     public ConcurrentHashMap<String, StoredChunks> getStoredChunks() {
