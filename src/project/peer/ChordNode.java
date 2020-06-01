@@ -136,6 +136,16 @@ public class ChordNode {
             ChordNode.successors.add(1, successor2);
             ChordNode.successors.add(2, successor3);
         }
+
+        if(predecessor != null)
+            System.out.println("Predecessor: " + predecessor);
+        System.out.println("Current Node: " + this_node.key);
+        System.out.println("Successor: " + getSuccessorNode());
+        System.out.println("Successor list: " + successors);
+        for(int i = 10; i < m; i+=10){
+            System.out.println("Finger " + i + ": " + finger_table.get(i));
+        }
+
     }
 
     private void verifyPredecessor() {
