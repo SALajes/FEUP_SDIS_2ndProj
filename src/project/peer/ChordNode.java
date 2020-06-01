@@ -138,12 +138,17 @@ public class ChordNode {
         }
 
         if(predecessor != null)
-            System.out.println("Predecessor: " + predecessor);
+            System.out.println("Predecessor: " + predecessor.key);
         System.out.println("Current Node: " + this_node.key);
-        System.out.println("Successor: " + getSuccessorNode());
-        System.out.println("Successor list: " + successors);
+        System.out.println("Successor: " + getSuccessorNode().key);
+        for(int i = 1; i < num_successors; i++){
+            System.out.println("Successor " + (i+1) + ": " + successors.get(i).key);
+        }
         for(int i = 10; i < m; i+=10){
-            System.out.println("Finger " + i + ": " + finger_table.get(i));
+            System.out.println("Finger " + i + ": " + finger_table.get(i).key);
+        }
+        for(int i = 61; i <= m; i++){
+            System.out.println("Finger " + i + ": " + finger_table.get(i).key);
         }
 
     }
@@ -193,7 +198,6 @@ public class ChordNode {
         NodeInfo node = findSuccessor(key);
         if(node == null)
             return;
-
         finger_table.put(entry, node);
     }
 
