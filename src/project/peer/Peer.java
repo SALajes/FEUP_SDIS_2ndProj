@@ -49,7 +49,7 @@ public class Peer implements RemoteInterface {
     }
 
     private static void usage(){
-        System.out.println("Usage: [package]Peer <peer_id> <service_access_point> <port> [<neighbour_address> <neighbour_port>]");
+        System.out.println("Usage: java [package]Peer <peer_id> <service_access_point> <port> [<neighbour_address> <neighbour_port>]");
     }
 
     //class methods
@@ -116,7 +116,6 @@ public class Peer implements RemoteInterface {
 
         } catch (Exception e) {
             System.err.println("Peer exception: " + e.toString());
-            e.printStackTrace();
         }
     }
 
@@ -337,7 +336,6 @@ public class Peer implements RemoteInterface {
             file_output2.close();
 
         } catch (IOException i) {
-            i.printStackTrace();
         }
     }
 
@@ -371,7 +369,6 @@ public class Peer implements RemoteInterface {
             listing_file_input.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
         return true;

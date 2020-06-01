@@ -33,7 +33,6 @@ public class ChunkFactory {
                 chunks.add(new Chunk(chunks.size(), new byte[0], 0));
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
         return chunks;
@@ -60,7 +59,6 @@ public class ChunkFactory {
                 return new Chunk(chunk_no, new byte[0], 0);
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
         return null;

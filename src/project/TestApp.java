@@ -94,16 +94,7 @@ public class TestApp {
                     System.err.println("But sub_protocol given "+ sub_protocol);
                     System.exit(-7);
             }
-        } catch (AccessException e) {
-            e.printStackTrace();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (NotBoundException e) {
-            System.out.println("Bound Exception: Peer service access point (" + peer_ap + ") is not bound");
-        } catch (InvalidMessageException e) {
-            System.out.println(e.getMessage());
-        } catch (InvalidFileException e) {
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
         }
     }
 }

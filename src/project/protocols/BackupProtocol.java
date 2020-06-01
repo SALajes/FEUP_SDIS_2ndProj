@@ -119,7 +119,6 @@ public class BackupProtocol  {
             BigInteger key = ChordNode.generateKey(file_id + ":" + chunk_no + ":" + rep_degree + ":" + Peer.id);
             return ChordNode.findSuccessor(key);
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
         }
         return null;
     }

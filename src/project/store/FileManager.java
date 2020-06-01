@@ -49,7 +49,6 @@ public class FileManager {
                 return true;
             }
         } catch(Exception e) {
-            e.printStackTrace();
             System.err.println("Couldn't create an empty file to start restoring");
             return false;
         }
@@ -91,7 +90,6 @@ public class FileManager {
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
         }
         byte[] hash = digest.digest(file_name_to_encode.getBytes(StandardCharsets.UTF_8));
 
@@ -136,7 +134,6 @@ public class FileManager {
         try {
             channel = AsynchronousFileChannel.open(path, StandardOpenOption.WRITE);
         } catch (IOException e) {
-            e.printStackTrace();
             System.err.println("Couldn't open restore file");
             return false;
         }
@@ -147,7 +144,6 @@ public class FileManager {
             @Override
             public void failed(Throwable exc, Object attachment) {
                 System.out.println("Restore failed with exception:");
-                exc.printStackTrace();
             }
         };
 
@@ -241,7 +237,6 @@ public class FileManager {
         try {
             channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
         ByteBuffer buffer = ByteBuffer.allocate(chunk_size);
@@ -253,7 +248,6 @@ public class FileManager {
         try {
             result.get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
         }
 
         buffer.flip();
@@ -390,7 +384,6 @@ public class FileManager {
         try {
             channel = AsynchronousFileChannel.open(path, StandardOpenOption.WRITE);
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
         CompletionHandler handler = new CompletionHandler() {
@@ -401,7 +394,6 @@ public class FileManager {
             @Override
             public void failed(Throwable exc, Object attachment) {
                 System.out.println(attachment + " failed with exception:");
-                exc.printStackTrace();
             }
         };
 

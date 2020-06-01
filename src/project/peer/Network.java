@@ -30,7 +30,6 @@ public class Network {
 
             } catch (IOException ioException) {
                 System.out.println("Failed to accept request");
-                ioException.printStackTrace();
             }
         }
     }
@@ -47,7 +46,6 @@ public class Network {
 
             socket.close();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
         }
     }
 
