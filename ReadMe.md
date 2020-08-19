@@ -40,7 +40,7 @@ To cleanup the peer directories created, simply run the following script:
 
 
 ##Authors
-João Paulo Monteiro Leite -- 201705312@fe.up.pt
-Márcia Isabel Reis Teixeira -- 201706065@fe.up.pt
-Maria Helena Ferreira -- up201704508@fe.up.pt
-Sofia de Araújo Lajes -- up201704066@fe.up.pt
+João Paulo Monteiro Leite -- 201705312@fe.up.pt </br>
+Márcia Isabel Reis Teixeira -- 201706065@fe.up.pt </br>
+Maria Helena Ferreira -- up201704508@fe.up.pt </br>
+Sofia de Araújo Lajes -- up201704066@fe.up.pt </br>
