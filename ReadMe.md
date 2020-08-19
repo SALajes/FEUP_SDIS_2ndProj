@@ -1,5 +1,5 @@
 # Distributed Systems / Sistemas Distribuídos - 2019/2020
-Second project of SDIS curricular unit: **Distributed Backup Service**
+Second project of SDIS curricular unit: **Distributed Backup Service for Internet**
 
 Link for the first project: https://github.com/SALajes/FEUP_SDIS_1stProj
 
